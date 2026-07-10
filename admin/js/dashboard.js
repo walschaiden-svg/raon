@@ -694,6 +694,11 @@ function renderFeaturedGrid(items) {
     margin: 8,
     float: false,
     animate: true,
+    // Gridstack defaults to auto-collapsing to a single column below 768px
+    // and caches that as a separate "layout" — save() then merges nodes
+    // with that cached layout, which can silently override live w/h
+    // changes. The admin panel is desktop-only, so disable it entirely.
+    disableOneColumnMode: true,
   }, container);
 
   featuredGrid.load(items.map(item => ({
