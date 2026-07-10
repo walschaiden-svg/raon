@@ -751,8 +751,12 @@ section{ position: relative; }
 .pf-modal-images .main-img.main-video::after{ content: none; }
 .pf-modal-images .main-video{ background: #000; }
 .pf-modal-images .main-video iframe{ width: 100%; height: 100%; border: 0; }
-.pf-modal-images .thumb-row{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; }
-.pf-modal-images .thumb-row div{ position: relative; aspect-ratio: 1; overflow: hidden; cursor: pointer; opacity: .7; transition: opacity .25s; }
+.pf-modal-images .thumb-row{
+  display: flex; gap: 10px; overflow-x: auto; scroll-behavior: auto;
+  scrollbar-width: none; -ms-overflow-style: none;
+}
+.pf-modal-images .thumb-row::-webkit-scrollbar{ display: none; }
+.pf-modal-images .thumb-row div{ position: relative; flex: 0 0 108px; aspect-ratio: 1; overflow: hidden; cursor: pointer; opacity: .7; transition: opacity .25s; }
 .pf-modal-images .thumb-row div.active, .pf-modal-images .thumb-row div:hover{ opacity: 1; }
 .pf-modal-images .thumb-row img{ width: 100%; height: 100%; object-fit: cover; }
 .pf-modal-images .thumb-row .thumb-play{

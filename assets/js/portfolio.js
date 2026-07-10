@@ -176,6 +176,40 @@ function openDetailFrom(tileEl) {
   });
 }
 
+let thumbScrollRAF = null;
+let thumbScrollPaused = false;
+
+/* 썸네일이 4개를 넘어가도 전부 볼 수 있도록 천천히 자동으로 옆으로 흐르게 하고,
+   마우스를 올리면 멈춰서 원하는 사진을 클릭할 수 있게 합니다. 썸네일 수가
+   적어 스크롤할 내용이 없으면 scrollLeft 갱신이 사실상 no-op이라 안전합니다. */
+function startThumbAutoScroll(container) {
+  stopThumbAutoScroll();
+  if (!container) return;
+  thumbScrollPaused = false;
+  container.addEventListener('mouseenter', () => { thumbScrollPaused = true; });
+  container.addEventListener('mouseleave', () => { thumbScrollPaused = false; });
+
+  const step = () => {
+    if (!thumbScrollPaused) {
+      const maxScroll = container.scrollWidth - container.clientWidth;
+      if (maxScroll <= 0) {
+        // nothing to scroll
+      } else if (container.scrollLeft >= maxScroll - 1) {
+        container.scrollLeft = 0;
+      } else {
+        container.scrollLeft += 0.5;
+      }
+    }
+    thumbScrollRAF = requestAnimationFrame(step);
+  };
+  thumbScrollRAF = requestAnimationFrame(step);
+}
+
+function stopThumbAutoScroll() {
+  if (thumbScrollRAF) cancelAnimationFrame(thumbScrollRAF);
+  thumbScrollRAF = null;
+}
+
 async function openDetail(id) {
   let item = itemCache.get(String(id));
   if (!item) item = await fetchPortfolioItem(id);
@@ -214,6 +248,7 @@ async function openDetail(id) {
   document.querySelectorAll('#pfModalImages .thumb-row div').forEach(thumb => {
     thumb.addEventListener('click', () => setMain(Number(thumb.dataset.index)));
   });
+  startThumbAutoScroll(document.querySelector('#pfModalImages .thumb-row'));
 
   document.getElementById('pfModalInfo').innerHTML = `
     <span class="pf-type">${categoryLabelMap[item.category] || ''}</span>
@@ -256,6 +291,7 @@ function navigateDetail(delta) {
 }
 
 function closeDetail() {
+  stopThumbAutoScroll();
   document.getElementById('pfModal').classList.remove('is-open');
   document.getElementById('pfModalImages').innerHTML = '';
   document.body.style.overflow = '';
