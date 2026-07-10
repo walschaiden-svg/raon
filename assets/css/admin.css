@@ -187,6 +187,7 @@ body.admin-body{
   transition: all .2s;
 }
 .upload-dropzone:hover{ border-color: var(--gold-line); color: var(--gold); }
+.upload-dropzone.drag-over{ border-color: var(--gold); color: var(--gold); background: var(--gold-dim); border-style: solid; }
 .upload-dropzone input{ display: none; }
 
 /* ---------- Toast ---------- */

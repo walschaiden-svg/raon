@@ -29,6 +29,49 @@ function setStatus(id, msg, ok = true) {
 }
 
 /* ---------------------------------------------------------------------------
+   업로드 드롭존 — 파일을 드래그해서 놓으면 안의 <input type="file">에 그대로
+   전달하고 change 이벤트를 발생시켜, 기존 change 핸들러(업로드 로직)를 그대로
+   재사용합니다. document에 위임해두면 나중에 동적으로 추가되는 드롭존(반복
+   리스트 등)에도 별도 재바인딩 없이 항상 적용됩니다.
+--------------------------------------------------------------------------- */
+function initDropzones() {
+  const zoneOf = (e) => e.target.closest('.upload-dropzone');
+
+  document.addEventListener('dragover', (e) => {
+    const zone = zoneOf(e);
+    if (!zone) return;
+    e.preventDefault();
+    zone.classList.add('drag-over');
+  });
+
+  document.addEventListener('dragleave', (e) => {
+    const zone = zoneOf(e);
+    if (!zone) return;
+    zone.classList.remove('drag-over');
+  });
+
+  document.addEventListener('drop', (e) => {
+    const zone = zoneOf(e);
+    if (!zone) return;
+    e.preventDefault();
+    zone.classList.remove('drag-over');
+
+    const input = zone.querySelector('input[type="file"]');
+    const dropped = e.dataTransfer && e.dataTransfer.files;
+    if (!input || !dropped || !dropped.length) return;
+
+    if (input.multiple) {
+      input.files = dropped;
+    } else {
+      const dt = new DataTransfer();
+      dt.items.add(dropped[0]);
+      input.files = dt.files;
+    }
+    input.dispatchEvent(new Event('change', { bubbles: true }));
+  });
+}
+
+/* ---------------------------------------------------------------------------
    반복 리스트 에디터 (강점, 통계, 연혁, 장비, 공정 단계 공용)
 --------------------------------------------------------------------------- */
 function fieldHtml(f, value) {
@@ -1104,6 +1147,7 @@ async function init() {
 
   document.getElementById('logoutBtn').addEventListener('click', logout);
   initNav();
+  initDropzones();
 
   await Promise.all([
     initHomePanel(),
