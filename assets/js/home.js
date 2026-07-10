@@ -1,4 +1,4 @@
-import { fetchPageContent, fetchPortfolio, fetchCategories } from './content.js';
+import { fetchPageContent, fetchPortfolio, fetchCategories, fetchFeaturedPortfolio } from './content.js';
 import { initFooter } from './footer.js';
 
 let categoryLabelMap = {};
@@ -32,32 +32,51 @@ function renderStrengths(list) {
   `).join('');
 }
 
-function renderFeaturedWork(items) {
-  const grid = document.getElementById('featuredWorkGrid');
-  if (!items.length) {
-    grid.innerHTML = `<p class="text-muted" style="grid-column:1/-1;">등록된 프로젝트가 없습니다.</p>`;
-    return;
-  }
-  grid.innerHTML = items.slice(0, 4).map((p, i) => `
+function workCardHtml(p) {
+  return `
     <a href="portfolio.html?item=${p.id}" class="work-card reveal is-visible">
       <img src="${p.cover_image_url}" alt="${p.title}">
       <div class="overlay"><div><span class="tag">${categoryLabelMap[p.category] || ''}</span><h3>${p.title}</h3></div></div>
     </a>
-  `).join('');
+  `;
+}
+
+function renderFeaturedWork(featuredItems, fallbackItems) {
+  const grid = document.getElementById('featuredWorkGrid');
+
+  if (featuredItems.length) {
+    grid.className = 'work-grid-custom';
+    grid.innerHTML = featuredItems.map(p => `
+      <a href="portfolio.html?item=${p.id}" class="work-card reveal is-visible"
+         style="grid-column:${p.featured_x + 1} / span ${p.featured_w}; grid-row:${p.featured_y + 1} / span ${p.featured_h};">
+        <img src="${p.cover_image_url}" alt="${p.title}">
+        <div class="overlay"><div><span class="tag">${categoryLabelMap[p.category] || ''}</span><h3>${p.title}</h3></div></div>
+      </a>
+    `).join('');
+    return;
+  }
+
+  grid.className = 'work-grid';
+  if (!fallbackItems.length) {
+    grid.innerHTML = `<p class="text-muted" style="grid-column:1/-1;">등록된 프로젝트가 없습니다.</p>`;
+    return;
+  }
+  grid.innerHTML = fallbackItems.slice(0, 4).map(workCardHtml).join('');
 }
 
 async function init() {
-  const [home, , portfolio, categories] = await Promise.all([
+  const [home, , portfolio, categories, featured] = await Promise.all([
     fetchPageContent('home'),
     initFooter(),
     fetchPortfolio({ category: 'all', page: 1 }),
     fetchCategories(),
+    fetchFeaturedPortfolio(),
   ]);
   categoryLabelMap = Object.fromEntries(categories.map(c => [c.key, c.label]));
 
   renderHero(home);
   renderStrengths(home.strengths || []);
-  renderFeaturedWork(portfolio.items);
+  renderFeaturedWork(featured, portfolio.items);
 
   if (window.RAON && window.RAON.initReveal) window.RAON.initReveal();
 }

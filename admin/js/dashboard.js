@@ -475,7 +475,7 @@ function renderPortfolioTable(items) {
     <tr>
       <td>${p.sort_order ?? 0}</td>
       <td><img class="thumb" src="${p.cover_image_url || ''}" alt=""></td>
-      <td class="t-title">${escapeHtml(p.title)}</td>
+      <td class="t-title">${escapeHtml(p.title)}${p.featured ? ' <span class="status-pill published">대표</span>' : ''}</td>
       <td>${escapeHtml(categoryLabel(p.category))}</td>
       <td>${escapeHtml(p.year || '')}</td>
       <td><span class="status-pill ${p.published ? 'published' : ''}">${p.published ? '공개' : '비공개'}</span></td>
@@ -525,6 +525,7 @@ function openItemModal(item) {
   document.getElementById('i_sort_order').value = item?.sort_order ?? 0;
   document.getElementById('i_youtube').value = item?.youtube_url || '';
   document.getElementById('i_published').checked = item ? !!item.published : true;
+  document.getElementById('i_featured').checked = item ? !!item.featured : false;
   document.getElementById('deleteItemBtn').style.display = item ? 'inline-flex' : 'none';
 
   renderImagePreview('i_cover_preview', coverImageUrl ? [coverImageUrl] : [], { single: true });
@@ -609,6 +610,7 @@ async function initPortfolioPanel() {
       youtube_url: document.getElementById('i_youtube').value.trim(),
       sort_order: Number(document.getElementById('i_sort_order').value) || 0,
       published: document.getElementById('i_published').checked,
+      featured: document.getElementById('i_featured').checked,
     };
     if (!payload.title) { toast('제목을 입력해주세요.', true); return; }
 
@@ -626,6 +628,84 @@ async function initPortfolioPanel() {
       loadPortfolioList();
     } catch (err) {
       toast('저장 실패: ' + err.message, true);
+    }
+  });
+}
+
+/* ---------------------------------------------------------------------------
+   대표 프로젝트 배치 (FEATURED GRID) 패널
+--------------------------------------------------------------------------- */
+const FEATURED_COLUMNS = 6;
+let featuredGrid = null;
+
+async function loadFeaturedItems() {
+  const { data, error } = await supabase.from('portfolio_items')
+    .select('id, title, cover_image_url, featured_x, featured_y, featured_w, featured_h')
+    .eq('featured', true)
+    .order('featured_y', { ascending: true })
+    .order('featured_x', { ascending: true });
+  if (error) { toast('대표 프로젝트 불러오기 실패: ' + error.message, true); return; }
+  renderFeaturedGrid(data || []);
+}
+
+function renderFeaturedGrid(items) {
+  const container = document.getElementById('featuredGridStack');
+  const emptyMsg = document.getElementById('featuredEmptyMsg');
+
+  if (featuredGrid) { featuredGrid.destroy(false); featuredGrid = null; }
+
+  if (!items.length) {
+    container.innerHTML = '';
+    container.style.display = 'none';
+    emptyMsg.style.display = 'block';
+    return;
+  }
+  container.style.display = '';
+  emptyMsg.style.display = 'none';
+
+  container.innerHTML = items.map(item => `
+    <div class="grid-stack-item" gs-id="${escapeAttr(item.id)}" gs-x="${item.featured_x}" gs-y="${item.featured_y}" gs-w="${item.featured_w}" gs-h="${item.featured_h}">
+      <div class="grid-stack-item-content">
+        <img src="${item.cover_image_url || ''}" alt="">
+        <span class="ft-title">${escapeHtml(item.title)}</span>
+      </div>
+    </div>
+  `).join('');
+
+  featuredGrid = GridStack.init({
+    column: FEATURED_COLUMNS,
+    cellHeight: 90,
+    margin: 8,
+    float: false,
+    animate: true,
+  }, container);
+}
+
+function initFeaturedPanel() {
+  loadFeaturedItems();
+
+  document.getElementById('reloadFeaturedBtn').addEventListener('click', loadFeaturedItems);
+
+  document.getElementById('saveFeatured').addEventListener('click', async () => {
+    if (!featuredGrid) { toast('저장할 항목이 없습니다.', true); return; }
+    const nodes = featuredGrid.save(false);
+    if (!Array.isArray(nodes) || !nodes.length) { toast('저장할 항목이 없습니다.', true); return; }
+
+    setStatus('featuredSaveStatus', '저장 중...', true);
+    try {
+      const results = await Promise.all(nodes.map(n =>
+        supabase.from('portfolio_items').update({
+          featured_x: n.x, featured_y: n.y, featured_w: n.w, featured_h: n.h,
+        }).eq('id', n.id)
+      ));
+      const failed = results.find(r => r.error);
+      if (failed) throw failed.error;
+
+      setStatus('featuredSaveStatus', '저장되었습니다.', true);
+      toast('대표 프로젝트 배치가 저장되었습니다.');
+    } catch (err) {
+      setStatus('featuredSaveStatus', '저장 실패: ' + err.message, false);
+      toast('저장 실패', true);
     }
   });
 }
@@ -904,6 +984,7 @@ async function init() {
     initContactPanel(),
   ]);
   await initPortfolioPanel();
+  initFeaturedPanel();
   initInquiriesPanel();
   initAnalyticsPanel();
 }

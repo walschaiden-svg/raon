@@ -143,6 +143,21 @@ body.admin-body{
   .analytics-grid{ grid-template-columns: 1fr; }
 }
 
+/* ---------- Featured projects grid editor (Gridstack) ---------- */
+.grid-stack{ background: var(--bg-elevated); border: 1px solid var(--border); }
+.grid-stack .grid-stack-item-content{
+  background: #000; overflow: hidden; border: 1px solid var(--border-strong);
+  display: flex; align-items: flex-end; position: relative; cursor: grab;
+}
+.grid-stack .grid-stack-item-content img{
+  position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55;
+}
+.grid-stack .grid-stack-item-content .ft-title{
+  position: relative; z-index: 1; padding: 10px 12px; font-size: .8rem; color: #fff;
+  background: linear-gradient(0deg, rgba(0,0,0,.75), transparent); width: 100%;
+}
+.grid-stack .ui-resizable-se{ z-index: 2; }
+
 /* ---------- Inquiries ---------- */
 .status-select{
   background: var(--bg-elevated); border: 1px solid var(--border-strong); color: var(--text);

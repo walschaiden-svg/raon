@@ -201,6 +201,24 @@ export async function fetchPortfolioItem(id) {
   }
 }
 
+export async function fetchFeaturedPortfolio() {
+  const supabase = await getSupabase();
+  if (!supabase) return [];
+  try {
+    const { data, error } = await supabase.from('portfolio_items')
+      .select('id, title, category, cover_image_url, featured_x, featured_y, featured_w, featured_h')
+      .eq('featured', true)
+      .eq('published', true)
+      .order('featured_y', { ascending: true })
+      .order('featured_x', { ascending: true });
+    if (error) throw error;
+    return data || [];
+  } catch (err) {
+    console.error('[content] fetchFeaturedPortfolio failed:', err);
+    return [];
+  }
+}
+
 export async function submitInquiry(payload) {
   const supabase = await getSupabase();
   if (!supabase) throw new Error('문의 시스템에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');

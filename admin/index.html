@@ -7,6 +7,7 @@
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="../assets/css/style.css">
 <link rel="stylesheet" href="../assets/css/admin.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack.min.css">
 </head>
 <body class="admin-body">
 
@@ -15,6 +16,7 @@
   <nav class="admin-nav">
     <div class="nav-section-label">Content</div>
     <a href="#home" data-panel="home" class="active">Home</a>
+    <a href="#featured" data-panel="featured">대표 프로젝트 배치</a>
     <a href="#about" data-panel="about">About</a>
     <a href="#process" data-panel="process">Process</a>
     <a href="#contact" data-panel="contact">Contact</a>
@@ -76,6 +78,25 @@
     <div class="admin-save-bar">
       <span class="save-status" id="homeSaveStatus"></span>
       <button class="btn btn-primary" id="saveHome">저장하기</button>
+    </div>
+  </section>
+
+  <!-- ============ FEATURED PROJECTS LAYOUT ============ -->
+  <section class="admin-panel" id="panel-featured">
+    <div class="admin-topbar">
+      <div><h1>대표 프로젝트 배치</h1><p>홈페이지 대표 프로젝트 그리드입니다. 타일을 드래그해 위치를 옮기고, 모서리를 잡아 크기를 조절하세요.</p></div>
+      <button class="btn btn-outline" id="reloadFeaturedBtn">새로고침</button>
+    </div>
+
+    <div class="admin-card">
+      <p class="card-desc">프로젝트 관리에서 "홈페이지 대표 프로젝트로 지정"을 체크한 프로젝트만 여기에 표시됩니다. 지정된 프로젝트가 없으면 홈페이지에는 최신 프로젝트 4개가 자동으로 노출됩니다.</p>
+      <div class="grid-stack" id="featuredGridStack"></div>
+      <p class="text-muted" id="featuredEmptyMsg" style="display:none; text-align:center; padding:40px 0;">대표 프로젝트로 지정된 프로젝트가 없습니다. "프로젝트 관리"에서 먼저 지정해주세요.</p>
+    </div>
+
+    <div class="admin-save-bar">
+      <span class="save-status" id="featuredSaveStatus"></span>
+      <button class="btn btn-primary" id="saveFeatured">배치 저장하기</button>
     </div>
   </section>
 
@@ -364,6 +385,11 @@
         <label for="i_published">사이트에 공개</label>
       </div>
 
+      <div class="checkbox-inline">
+        <input type="checkbox" id="i_featured">
+        <label for="i_featured">홈페이지 대표 프로젝트로 지정 (배치는 "대표 프로젝트 배치" 메뉴에서 설정)</label>
+      </div>
+
       <div class="admin-modal-actions">
         <button type="button" class="btn btn-outline" id="deleteItemBtn" style="display:none; margin-right:auto;">삭제</button>
         <button type="button" class="btn btn-outline" id="cancelItemBtn">취소</button>
@@ -376,6 +402,7 @@
 <div class="admin-toast" id="adminToast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack-all.js"></script>
 <script type="module" src="js/dashboard.js"></script>
 </body>
 </html>

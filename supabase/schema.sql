@@ -40,11 +40,17 @@ create table if not exists portfolio_items (
   youtube_url   text default '',        -- 유튜브 영상 URL (입력 시 상세페이지 맨 앞에 자동재생 배치)
   published     boolean not null default true,
   sort_order    integer not null default 0,           -- 관리자 지정 노출 순서 (낮은 숫자부터 먼저 노출, 홈페이지엔 숫자 자체는 비노출)
+  featured      boolean not null default false,       -- 홈페이지 대표 프로젝트 그리드에 노출할지 여부
+  featured_x    integer not null default 0,           -- 대표 프로젝트 그리드 내 위치/크기 (6칸 기준)
+  featured_y    integer not null default 0,
+  featured_w    integer not null default 2,
+  featured_h    integer not null default 2,
   created_at    timestamptz not null default now()
 );
 
 create index if not exists portfolio_items_category_idx on portfolio_items(category);
 create index if not exists portfolio_items_published_idx on portfolio_items(published);
+create index if not exists portfolio_items_featured_idx on portfolio_items(featured);
 
 -- 4) 견적 문의 접수
 create table if not exists inquiries (
