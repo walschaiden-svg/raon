@@ -1,6 +1,7 @@
 import { fetchPortfolio, fetchPortfolioItem, fetchPortfolioFilters, fetchCategories, fetchPortfolioIds, fetchPageContent, getDefault } from './content.js';
 import { initFooter } from './footer.js';
-import { parseYoutubeId, youtubeThumbnail, youtubeEmbedUrl } from './youtube.js';
+import { parseYoutubeId, youtubeEmbedUrl } from './youtube.js';
+import { getTemplate } from './detail-layouts.js';
 
 const state = { category: 'all', region: 'all', scale: 'all', page: 1 };
 const itemCache = new Map();
@@ -140,20 +141,52 @@ async function initFilters() {
   });
 }
 
-function buildMediaSlides(item) {
-  const images = (item.images && item.images.length ? item.images : [item.cover_image_url]).filter(Boolean);
-  const ytId = parseYoutubeId(item.youtube_url);
-  const slides = [];
-  if (ytId) slides.push({ type: 'video', id: ytId, thumb: youtubeThumbnail(ytId) });
-  images.forEach(src => slides.push({ type: 'image', src }));
-  return slides;
+function buildDetailImages(item) {
+  return (item.images && item.images.length ? item.images : [item.cover_image_url]).filter(Boolean);
 }
 
-function renderMainSlide(slide, title) {
-  if (slide.type === 'video') {
-    return `<div class="main-img main-video"><iframe src="${youtubeEmbedUrl(slide.id)}" title="${title}" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`;
+function renderInfoCard(item) {
+  return `
+    <span class="pf-type">${categoryLabelMap[item.category] || ''}</span>
+    <h3>${item.title}</h3>
+    <div class="pf-spec-list">
+      ${item.client ? `<div class="pf-spec-row"><span>${fieldLabels.client}</span><span>${item.client}</span></div>` : ''}
+      ${item.region ? `<div class="pf-spec-row"><span>${fieldLabels.region}</span><span>${item.region}</span></div>` : ''}
+      ${item.scale ? `<div class="pf-spec-row"><span>${fieldLabels.scale}</span><span>${item.scale}</span></div>` : ''}
+      ${item.duration ? `<div class="pf-spec-row"><span>${fieldLabels.duration}</span><span>${item.duration}</span></div>` : ''}
+      ${item.year ? `<div class="pf-spec-row"><span>${fieldLabels.year}</span><span>${item.year}</span></div>` : ''}
+    </div>
+    <div class="pf-desc-label">프로젝트 소개</div>
+    <div class="pf-desc">${item.description || '상세 설명이 등록되지 않았습니다.'}</div>
+  `;
+}
+
+/* BSP 트리(assets/js/detail-layouts.js)를 그대로 중첩 flexbox로 그립니다.
+   split 노드는 방향(가로/세로)과 비율(flex-grow)만 자식에게 넘기고, leaf 노드가
+   실제 사진을 렌더링합니다 — 좌표 계산 없이 항상 빈틈없이 채워집니다. 프로젝트
+   설명은 이 캔버스가 아니라 별도 정보 패널(renderInfoCard)에 고정 배치됩니다. */
+function renderCanvasNode(node, images, title, flex = 1, extraStyle = '') {
+  if (node.leaf === 'empty') {
+    return `<div class="pf-canvas-empty" style="flex:${flex}; ${extraStyle}"></div>`;
   }
-  return `<div class="main-img"><img src="${slide.src}" alt="${title}" id="pfMainImg"></div>`;
+  if (typeof node.leaf === 'number') {
+    const src = images[node.leaf];
+    return `<div class="pf-canvas-cell" data-index="${node.leaf}" style="flex:${flex}; ${extraStyle}">
+      <img src="${src}" alt="${title}" loading="lazy">
+    </div>`;
+  }
+  const dir = node.split === 'x' ? 'row' : 'column';
+  const children = node.children
+    .map((child, i) => renderCanvasNode(child, images, title, node.ratio[i]))
+    .join('');
+  return `<div class="pf-canvas-split" data-dir="${node.split}" style="flex:${flex}; flex-direction:${dir}; ${extraStyle}">${children}</div>`;
+}
+
+/* 스크롤 없이 항상 한 화면(캔버스 높이) 안에 맞추고, 사진이 작게 보이는 건
+   클릭 시 라이트박스 확대로 보완합니다. */
+function renderDetailCanvas(images, variant, title) {
+  const template = getTemplate(images.length, variant);
+  return renderCanvasNode(template, images, title);
 }
 
 const VT_DETAIL_IMG = 'pf-detail-img';
@@ -176,84 +209,32 @@ function openDetailFrom(tileEl) {
   });
 }
 
-/* 썸네일이 4개를 넘어가면 좌우 화살표로 한 페이지씩 스크롤합니다. 화살표는
-   그 방향으로 더 볼 사진이 있을 때만 보이고, 끝에 도달하면 자동으로 숨습니다. */
-function initThumbNav(wrap) {
-  if (!wrap) return;
-  const row = wrap.querySelector('.thumb-row');
-  const prevBtn = wrap.querySelector('[data-thumb-nav="prev"]');
-  const nextBtn = wrap.querySelector('[data-thumb-nav="next"]');
-  if (!row || !prevBtn || !nextBtn) return;
-
-  const update = () => {
-    const maxScroll = row.scrollWidth - row.clientWidth;
-    prevBtn.classList.toggle('is-hidden', row.scrollLeft <= 1);
-    nextBtn.classList.toggle('is-hidden', row.scrollLeft >= maxScroll - 1);
-  };
-
-  prevBtn.addEventListener('click', () => row.scrollBy({ left: -row.clientWidth * 0.8, behavior: 'smooth' }));
-  nextBtn.addEventListener('click', () => row.scrollBy({ left: row.clientWidth * 0.8, behavior: 'smooth' }));
-  row.addEventListener('scroll', update);
-  update();
-}
-
 async function openDetail(id) {
   let item = itemCache.get(String(id));
   if (!item) item = await fetchPortfolioItem(id);
   if (!item) return;
 
-  const slides = buildMediaSlides(item);
+  const images = buildDetailImages(item);
+  const ytId = parseYoutubeId(item.youtube_url);
 
-  const renderThumbs = () => slides.length > 1 ? `<div class="thumb-row-wrap">
-    <button type="button" class="thumb-nav prev is-hidden" data-thumb-nav="prev" aria-label="이전 사진">‹</button>
-    <div class="thumb-row">
-      ${slides.map((s, i) => `<div class="${i === 0 ? 'active' : ''}" data-index="${i}">
-        <img src="${s.type === 'video' ? s.thumb : s.src}" alt="${item.title}">
-        ${s.type === 'video' ? '<span class="thumb-play">▶</span>' : ''}
-      </div>`).join('')}
-    </div>
-    <button type="button" class="thumb-nav next is-hidden" data-thumb-nav="next" aria-label="다음 사진">›</button>
-  </div>` : '';
+  const videoHtml = ytId
+    ? `<div class="pf-detail-video"><iframe src="${youtubeEmbedUrl(ytId)}" title="${item.title}" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>`
+    : '';
+  const canvasHtml = images.length ? renderDetailCanvas(images, item.detail_layout || 0, item.title) : '';
 
-  const setMain = (index) => {
-    const slide = slides[index];
-    const imagesEl = document.getElementById('pfModalImages');
-    const mainEl = imagesEl.querySelector('.main-img');
-    mainEl.outerHTML = renderMainSlide(slide, item.title);
-    if (slide.type === 'image') {
-      imagesEl.querySelector('.main-img img').addEventListener('click', () => openLightbox(slide.src));
-    }
-    imagesEl.querySelectorAll('.thumb-row div').forEach((t, i) => t.classList.toggle('active', i === index));
-  };
+  document.getElementById('pfModalCanvas').innerHTML = `${videoHtml}${canvasHtml}`;
+  document.getElementById('pfModalInfo').innerHTML = renderInfoCard(item);
 
-  document.getElementById('pfModalImages').innerHTML = `
-    ${renderMainSlide(slides[0], item.title)}
-    ${renderThumbs()}
-  `;
-  if (slides[0].type === 'image') {
-    const mainImg = document.getElementById('pfModalImages').querySelector('.main-img img');
-    mainImg.style.viewTransitionName = VT_DETAIL_IMG;
-    mainImg.addEventListener('click', () => openLightbox(slides[0].src));
+  // 갤러리 썸네일 → 상세 이미지로 이어지는 view-transition 모프는 영상이 없을 때만
+  // (기존에도 영상이 첫 슬라이드면 모프를 적용하지 않았음) 첫 번째 캔버스 사진에 건다.
+  if (!ytId && images.length) {
+    const firstImg = document.querySelector('#pfModalCanvas .pf-canvas-cell img');
+    if (firstImg) firstImg.style.viewTransitionName = VT_DETAIL_IMG;
   }
 
-  document.querySelectorAll('#pfModalImages .thumb-row div').forEach(thumb => {
-    thumb.addEventListener('click', () => setMain(Number(thumb.dataset.index)));
+  document.querySelectorAll('#pfModalCanvas .pf-canvas-cell').forEach(cell => {
+    cell.addEventListener('click', () => openLightbox(images[Number(cell.dataset.index)]));
   });
-  initThumbNav(document.querySelector('#pfModalImages .thumb-row-wrap'));
-
-  document.getElementById('pfModalInfo').innerHTML = `
-    <span class="pf-type">${categoryLabelMap[item.category] || ''}</span>
-    <h3>${item.title}</h3>
-    <div class="pf-spec-list">
-      ${item.client ? `<div class="pf-spec-row"><span>${fieldLabels.client}</span><span>${item.client}</span></div>` : ''}
-      ${item.region ? `<div class="pf-spec-row"><span>${fieldLabels.region}</span><span>${item.region}</span></div>` : ''}
-      ${item.scale ? `<div class="pf-spec-row"><span>${fieldLabels.scale}</span><span>${item.scale}</span></div>` : ''}
-      ${item.duration ? `<div class="pf-spec-row"><span>${fieldLabels.duration}</span><span>${item.duration}</span></div>` : ''}
-      ${item.year ? `<div class="pf-spec-row"><span>${fieldLabels.year}</span><span>${item.year}</span></div>` : ''}
-    </div>
-    <div class="pf-desc-label">프로젝트 소개</div>
-    <div class="pf-desc">${item.description || '상세 설명이 등록되지 않았습니다.'}</div>
-  `;
 
   const modal = document.getElementById('pfModal');
   modal.classList.add('is-open');
@@ -283,7 +264,7 @@ function navigateDetail(delta) {
 
 function closeDetail() {
   document.getElementById('pfModal').classList.remove('is-open');
-  document.getElementById('pfModalImages').innerHTML = '';
+  document.getElementById('pfModalCanvas').innerHTML = '';
   document.body.style.overflow = '';
   const url = new URL(window.location);
   url.searchParams.delete('item');

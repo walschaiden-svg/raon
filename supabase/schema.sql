@@ -36,10 +36,11 @@ create table if not exists portfolio_items (
   duration      text default '',
   description   text default '',
   cover_image_url text default '',
-  images        jsonb not null default '[]'::jsonb,  -- 상세페이지용 이미지 URL 배열
+  images        jsonb not null default '[]'::jsonb,  -- 상세페이지용 이미지 URL 배열 (최대 9장)
+  detail_layout integer not null default 0,           -- 상세페이지 사진 그리드 템플릿 인덱스 (assets/js/detail-layouts.js 참조)
   youtube_url   text default '',        -- 유튜브 영상 URL (입력 시 상세페이지 맨 앞에 자동재생 배치)
   published     boolean not null default true,
-  sort_order    integer not null default 0,           -- 관리자 지정 노출 순서 (낮은 숫자부터 먼저 노출, 홈페이지엔 숫자 자체는 비노출)
+  sort_order    integer not null default 0,           -- 관리자/드래그 지정 노출 순서 (높은 숫자가 최신, 홈페이지/목록에 먼저 노출)
   featured      boolean not null default false,       -- 홈페이지 대표 프로젝트 그리드에 노출할지 여부
   featured_x    integer not null default 0,           -- 대표 프로젝트 그리드 내 위치/크기 (6칸 기준)
   featured_y    integer not null default 0,

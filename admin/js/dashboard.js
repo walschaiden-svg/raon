@@ -1,6 +1,7 @@
 import { supabase, requireAuth, logout } from './auth.js';
 import { uploadFile } from './upload.js';
 import { getDefault } from '../../assets/js/content.js';
+import { getVariantCount, MAX_DETAIL_IMAGES } from '../../assets/js/detail-layouts.js';
 
 /* ---------------------------------------------------------------------------
    공통 유틸
@@ -548,6 +549,26 @@ let pfCurrentCategory = 'all';
 let editingItem = null;
 let coverImageUrl = '';
 let detailImages = [];
+let selectedLayoutVariant = 0;
+
+/* 상세 이미지 장수에 맞는 레이아웃 템플릿 옵션(템플릿 1, 2, 3...)을 채웁니다.
+   장수가 바뀔 때마다(업로드/삭제) 다시 호출해야 선택 가능한 템플릿 개수가 맞습니다. */
+function updateLayoutTemplateSelect() {
+  const select = document.getElementById('i_layout_template');
+  const count = detailImages.length;
+  const total = count ? getVariantCount(count) : 0;
+
+  if (!total) {
+    select.innerHTML = '<option value="0">사진을 올리면 선택할 수 있습니다</option>';
+    select.disabled = true;
+    selectedLayoutVariant = 0;
+    return;
+  }
+  select.disabled = false;
+  if (selectedLayoutVariant >= total) selectedLayoutVariant = 0;
+  select.innerHTML = Array.from({ length: total }, (_, i) => `<option value="${i}">템플릿 ${i + 1}</option>`).join('');
+  select.value = String(selectedLayoutVariant);
+}
 
 let pfListCache = [];
 
@@ -670,7 +691,7 @@ function renderImagePreview(containerId, urls, { single = false } = {}) {
     btn.addEventListener('click', () => {
       const idx = Number(btn.dataset.removeImg);
       if (single) { coverImageUrl = ''; renderImagePreview(containerId, []); }
-      else { detailImages.splice(idx, 1); renderImagePreview(containerId, detailImages); }
+      else { detailImages.splice(idx, 1); renderImagePreview(containerId, detailImages); updateLayoutTemplateSelect(); }
     });
   });
 }
@@ -679,6 +700,7 @@ function openItemModal(item) {
   editingItem = item || null;
   coverImageUrl = item?.cover_image_url || '';
   detailImages = item?.images ? [...item.images] : [];
+  selectedLayoutVariant = item?.detail_layout ?? 0;
 
   document.getElementById('itemModalTitle').textContent = item ? '프로젝트 수정' : '새 프로젝트';
   document.getElementById('i_title').value = item?.title || '';
@@ -696,6 +718,7 @@ function openItemModal(item) {
 
   renderImagePreview('i_cover_preview', coverImageUrl ? [coverImageUrl] : [], { single: true });
   renderImagePreview('i_images_preview', detailImages);
+  updateLayoutTemplateSelect();
 
   document.getElementById('itemModal').classList.add('is-open');
 }
@@ -741,9 +764,25 @@ async function initPortfolioPanel() {
     } catch (err) { toast('업로드 실패: ' + err.message, true); }
   });
 
+  document.getElementById('i_layout_template').addEventListener('change', (e) => {
+    selectedLayoutVariant = Number(e.target.value) || 0;
+  });
+
   document.getElementById('i_images_file').addEventListener('change', async (e) => {
-    const files = Array.from(e.target.files);
+    let files = Array.from(e.target.files);
     if (!files.length) return;
+
+    const remaining = MAX_DETAIL_IMAGES - detailImages.length;
+    if (remaining <= 0) {
+      toast(`상세 이미지는 최대 ${MAX_DETAIL_IMAGES}장까지만 등록할 수 있습니다.`, true);
+      e.target.value = '';
+      return;
+    }
+    if (files.length > remaining) {
+      toast(`최대 ${MAX_DETAIL_IMAGES}장까지만 등록할 수 있어 ${remaining}장만 업로드합니다.`, true);
+      files = files.slice(0, remaining);
+    }
+
     toast('업로드 중...');
     try {
       for (const file of files) {
@@ -751,8 +790,10 @@ async function initPortfolioPanel() {
         detailImages.push(url);
       }
       renderImagePreview('i_images_preview', detailImages);
+      updateLayoutTemplateSelect();
       toast('이미지 업로드 완료');
     } catch (err) { toast('업로드 실패: ' + err.message, true); }
+    e.target.value = '';
   });
 
   document.getElementById('deleteItemBtn').addEventListener('click', async () => {
@@ -774,6 +815,7 @@ async function initPortfolioPanel() {
       description: document.getElementById('i_description').value.trim(),
       cover_image_url: coverImageUrl,
       images: detailImages,
+      detail_layout: selectedLayoutVariant,
       youtube_url: document.getElementById('i_youtube').value.trim(),
       published: document.getElementById('i_published').checked,
       featured: document.getElementById('i_featured').checked,
