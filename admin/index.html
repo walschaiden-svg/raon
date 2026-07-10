@@ -7,10 +7,6 @@
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="../assets/css/style.css">
 <link rel="stylesheet" href="../assets/css/admin.css">
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack.min.css">
-<!-- gridstack.min.css only ships width rules for 1-column and 12-column grids;
-     this adds the other column counts (we use a 6-column layout). -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack-extra.min.css">
 </head>
 <body class="admin-body">
 
@@ -93,7 +89,7 @@
 
     <div class="admin-card">
       <p class="card-desc">프로젝트 관리에서 "홈페이지 대표 프로젝트로 지정"을 체크한 프로젝트만 여기에 표시됩니다. 지정된 프로젝트가 없으면 홈페이지에는 최신 프로젝트 4개가 자동으로 노출됩니다.</p>
-      <div class="grid-stack" id="featuredGridStack"></div>
+      <div class="fx-grid" id="featuredGridStack"></div>
       <p class="text-muted" id="featuredEmptyMsg" style="display:none; text-align:center; padding:40px 0;">대표 프로젝트로 지정된 프로젝트가 없습니다. "프로젝트 관리"에서 먼저 지정해주세요.</p>
     </div>
 
@@ -405,7 +401,6 @@
 <div class="admin-toast" id="adminToast"></div>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/gridstack@10.1.2/dist/gridstack-all.js"></script>
 <script type="module" src="js/dashboard.js"></script>
 </body>
 </html>

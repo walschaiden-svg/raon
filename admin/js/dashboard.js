@@ -634,15 +634,18 @@ async function initPortfolioPanel() {
 
 /* ---------------------------------------------------------------------------
    대표 프로젝트 배치 (FEATURED GRID) 패널
+
+   Gridstack was dropped here after repeated cases of its resize not
+   persisting correctly (its internal collision/compaction/layout-cache
+   logic silently reverted width changes on save). This is a small,
+   fully self-contained drag/resize implementation instead — no
+   external grid library, so every step here is directly inspectable.
 --------------------------------------------------------------------------- */
 const FEATURED_COLUMNS = 6;
-let featuredGrid = null;
-
-// Gridstack v9+ no longer auto-injects widget.content into the DOM (XSS
-// hardening) — it must be wired up explicitly via this render callback,
-// otherwise tiles stay empty even though drag/resize still works fine.
-GridStack.renderCB = (el, w) => { el.innerHTML = w.content || ''; };
+const FEATURED_MAX_ROWS = 12;
 let featuredItemsCache = [];
+let featuredLayout = []; // working copy the admin drags/resizes: [{id, title, cover_image_url, x, y, w, h}]
+let featuredCellSize = 0; // px; cells are square (height = width)
 
 async function loadFeaturedItems() {
   const { data, error } = await supabase.from('portfolio_items')
@@ -673,14 +676,41 @@ function assignDefaultFeaturedPositions(items) {
   });
 }
 
+function featuredRowCount() {
+  return Math.max(2, ...featuredLayout.map(i => i.y + i.h), 0);
+}
+
+function drawFeaturedGrid() {
+  const container = document.getElementById('featuredGridStack');
+  featuredCellSize = container.clientWidth / FEATURED_COLUMNS;
+  container.style.height = `${featuredRowCount() * featuredCellSize}px`;
+
+  container.innerHTML = featuredLayout.map(item => `
+    <div class="fx-item" data-id="${escapeAttr(item.id)}" style="${featuredTileStyle(item)}">
+      <img src="${item.cover_image_url || ''}" alt="">
+      <span class="ft-title">${escapeHtml(item.title)}</span>
+      <div class="fx-resize" title="드래그해서 크기 조절"></div>
+    </div>
+  `).join('');
+
+  bindFeaturedInteractions();
+}
+
+function featuredTileStyle(item) {
+  const left = item.x * featuredCellSize;
+  const top = item.y * featuredCellSize;
+  const width = item.w * featuredCellSize;
+  const height = item.h * featuredCellSize;
+  return `left:${left}px; top:${top}px; width:${width}px; height:${height}px;`;
+}
+
 function renderFeaturedGrid(items) {
   const container = document.getElementById('featuredGridStack');
   const emptyMsg = document.getElementById('featuredEmptyMsg');
 
-  if (featuredGrid) { featuredGrid.destroy(true); featuredGrid = null; }
-  container.innerHTML = '';
-
   if (!items.length) {
+    featuredLayout = [];
+    container.innerHTML = '';
     container.style.display = 'none';
     emptyMsg.style.display = 'block';
     return;
@@ -688,24 +718,67 @@ function renderFeaturedGrid(items) {
   container.style.display = '';
   emptyMsg.style.display = 'none';
 
-  featuredGrid = GridStack.init({
-    column: FEATURED_COLUMNS,
-    cellHeight: 'auto', // square cells (row height = column width) so the shape drawn here matches the homepage exactly
-    margin: 8,
-    float: false,
-    animate: true,
-    // Gridstack defaults to auto-collapsing to a single column below 768px
-    // and caches that as a separate "layout" — save() then merges nodes
-    // with that cached layout, which can silently override live w/h
-    // changes. The admin panel is desktop-only, so disable it entirely.
-    disableOneColumnMode: true,
-  }, container);
-
-  featuredGrid.load(items.map(item => ({
+  featuredLayout = items.map(item => ({
     id: item.id,
+    title: item.title,
+    cover_image_url: item.cover_image_url,
     x: item.featured_x, y: item.featured_y, w: item.featured_w, h: item.featured_h,
-    content: `<img src="${item.cover_image_url || ''}" alt=""><span class="ft-title">${escapeHtml(item.title)}</span>`,
-  })));
+  }));
+
+  drawFeaturedGrid();
+}
+
+function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
+
+function bindFeaturedInteractions() {
+  const container = document.getElementById('featuredGridStack');
+
+  container.querySelectorAll('.fx-item').forEach(el => {
+    const item = featuredLayout.find(i => i.id === el.dataset.id);
+    if (!item) return;
+
+    const startDrag = (e, mode) => {
+      e.preventDefault();
+      const startX = e.clientX;
+      const startY = e.clientY;
+      const orig = { x: item.x, y: item.y, w: item.w, h: item.h };
+      el.classList.add('dragging');
+
+      const onMove = (moveEvt) => {
+        const dCols = Math.round((moveEvt.clientX - startX) / featuredCellSize);
+        const dRows = Math.round((moveEvt.clientY - startY) / featuredCellSize);
+
+        if (mode === 'move') {
+          item.x = clamp(orig.x + dCols, 0, FEATURED_COLUMNS - item.w);
+          item.y = clamp(orig.y + dRows, 0, FEATURED_MAX_ROWS - item.h);
+        } else {
+          item.w = clamp(orig.w + dCols, 1, FEATURED_COLUMNS - item.x);
+          item.h = clamp(orig.h + dRows, 1, FEATURED_MAX_ROWS - item.y);
+        }
+        el.setAttribute('style', featuredTileStyle(item));
+      };
+
+      const onUp = () => {
+        document.removeEventListener('mousemove', onMove);
+        document.removeEventListener('mouseup', onUp);
+        el.classList.remove('dragging');
+        // row count may have grown/shrunk, and container height needs updating
+        drawFeaturedGrid();
+      };
+
+      document.addEventListener('mousemove', onMove);
+      document.addEventListener('mouseup', onUp);
+    };
+
+    el.addEventListener('mousedown', (e) => {
+      if (e.target.closest('.fx-resize')) return;
+      startDrag(e, 'move');
+    });
+    el.querySelector('.fx-resize').addEventListener('mousedown', (e) => {
+      e.stopPropagation();
+      startDrag(e, 'resize');
+    });
+  });
 }
 
 function initFeaturedPanel() {
@@ -713,17 +786,25 @@ function initFeaturedPanel() {
 
   document.getElementById('reloadFeaturedBtn').addEventListener('click', loadFeaturedItems);
 
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (document.getElementById('panel-featured').classList.contains('active') && featuredLayout.length) {
+        drawFeaturedGrid();
+      }
+    }, 150);
+  });
+
   document.getElementById('saveFeatured').addEventListener('click', async () => {
-    if (!featuredGrid) { toast('저장할 항목이 없습니다.', true); return; }
-    const nodes = featuredGrid.save(false);
-    if (!Array.isArray(nodes) || !nodes.length) { toast('저장할 항목이 없습니다.', true); return; }
+    if (!featuredLayout.length) { toast('저장할 항목이 없습니다.', true); return; }
 
     setStatus('featuredSaveStatus', '저장 중...', true);
     try {
-      const results = await Promise.all(nodes.map(n =>
+      const results = await Promise.all(featuredLayout.map(item =>
         supabase.from('portfolio_items').update({
-          featured_x: n.x, featured_y: n.y, featured_w: n.w, featured_h: n.h,
-        }).eq('id', n.id)
+          featured_x: item.x, featured_y: item.y, featured_w: item.w, featured_h: item.h,
+        }).eq('id', item.id)
       ));
       const failed = results.find(r => r.error);
       if (failed) throw failed.error;
