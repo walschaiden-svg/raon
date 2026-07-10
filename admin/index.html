@@ -292,13 +292,19 @@
   <!-- ============ ANALYTICS ============ -->
   <section class="admin-panel" id="panel-analytics">
     <div class="admin-topbar">
-      <div><h1>방문자 분석</h1><p>최근 30일 기준 방문 통계입니다.</p></div>
+      <div><h1>방문자 분석</h1><p>최근 12개월 기준 방문 통계입니다.</p></div>
+      <div class="period-toggle" id="periodToggle">
+        <button type="button" data-period="day" class="active">일별</button>
+        <button type="button" data-period="week">주별</button>
+        <button type="button" data-period="month">월별</button>
+      </div>
     </div>
 
     <div class="analytics-stats" id="analyticsStats"></div>
+    <div class="analytics-stats cols-3" id="analyticsStats2" style="margin-top:-10px;"></div>
 
     <div class="admin-card">
-      <h3>일별 방문 추이</h3>
+      <h3 id="trendChartTitle">일별 방문 추이</h3>
       <div class="chart-wrap"><canvas id="chartDaily"></canvas></div>
     </div>
 
@@ -326,6 +332,22 @@
         <h3>검색 유입 키워드</h3>
         <div class="admin-table-wrap">
           <table class="admin-table"><thead><tr><th>키워드</th><th>횟수</th></tr></thead><tbody id="topKeywordsBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="analytics-grid">
+      <div class="admin-card">
+        <h3>브라우저 분포</h3>
+        <div class="admin-table-wrap">
+          <table class="admin-table"><thead><tr><th>브라우저</th><th>방문수</th></tr></thead><tbody id="topBrowsersBody"></tbody></table>
+        </div>
+      </div>
+      <div class="admin-card">
+        <h3>UTM 유입 상세</h3>
+        <p class="card-desc">소스 / 매체 / 캠페인 조합별 유입 수입니다. UTM 파라미터가 없는 방문은 제외됩니다.</p>
+        <div class="admin-table-wrap">
+          <table class="admin-table"><thead><tr><th>소스</th><th>매체</th><th>캠페인</th><th>방문수</th></tr></thead><tbody id="topUtmBody"></tbody></table>
         </div>
       </div>
     </div>

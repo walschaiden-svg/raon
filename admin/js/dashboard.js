@@ -1096,8 +1096,14 @@ function initInquiriesPanel() {
 /* ---------------------------------------------------------------------------
    방문자 분석 (ANALYTICS) 패널
 --------------------------------------------------------------------------- */
-const ANALYTICS_DAYS = 30;
+const ANALYTICS_LOOKBACK_DAYS = 400; // fetched once; covers the 12-month view
+const PERIOD_RANGE_DAYS = { day: 30, week: 84, month: 365 };
+const PERIOD_RANGE_LABEL = { day: '최근 30일', week: '최근 12주', month: '최근 12개월' };
+const PERIOD_TREND_TITLE = { day: '일별 방문 추이', week: '주별 방문 추이', month: '월별 방문 추이' };
 const DEVICE_LABEL = { mobile: '모바일', tablet: '태블릿', desktop: '데스크톱' };
+
+let analyticsPeriod = 'day';
+let analyticsRowsCache = null;
 
 function countBy(rows, keyFn) {
   const map = new Map();
@@ -1113,10 +1119,10 @@ function renderStatTile(label, value) {
   return `<div class="analytics-stat"><div class="stat-label">${label}</div><div class="stat-value">${value}</div></div>`;
 }
 
-function renderCountTable(bodyId, pairs, emptyMsg) {
+function renderCountTable(bodyId, pairs, emptyMsg, colspan = 2) {
   const tbody = document.getElementById(bodyId);
   if (!pairs.length) {
-    tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px; color:var(--text-faint);">${emptyMsg}</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${colspan}" style="text-align:center; padding:20px; color:var(--text-faint);">${emptyMsg}</td></tr>`;
     return;
   }
   tbody.innerHTML = pairs.slice(0, 8).map(([label, count]) => `
@@ -1124,25 +1130,82 @@ function renderCountTable(bodyId, pairs, emptyMsg) {
   `).join('');
 }
 
+function renderUtmTable(rows) {
+  const map = new Map();
+  rows.filter(r => r.utm_source).forEach(r => {
+    const key = `${r.utm_source}|${r.utm_medium || '-'}|${r.utm_campaign || '-'}`;
+    map.set(key, (map.get(key) || 0) + 1);
+  });
+  const pairs = [...map.entries()].sort((a, b) => b[1] - a[1]);
+  const tbody = document.getElementById('topUtmBody');
+  if (!pairs.length) {
+    tbody.innerHTML = `<tr><td colspan="4" style="text-align:center; padding:20px; color:var(--text-faint);">UTM 유입 데이터가 없습니다.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = pairs.slice(0, 8).map(([key, count]) => {
+    const [source, medium, campaign] = key.split('|');
+    return `<tr><td>${escapeHtml(source)}</td><td>${escapeHtml(medium)}</td><td>${escapeHtml(campaign)}</td><td>${count}</td></tr>`;
+  }).join('');
+}
+
 function isLightTheme() {
   return document.body.classList.contains('theme-light');
 }
 
-let dailyChart = null;
+/* 주 단위 집계의 기준(월요일 시작) — ISO 주 개념과 동일하게 맞춰 라벨/버킷 키가
+   서로 어긋나지 않도록 통일합니다. */
+function startOfWeek(date) {
+  const d = new Date(date);
+  d.setHours(0, 0, 0, 0);
+  const day = (d.getDay() + 6) % 7;
+  d.setDate(d.getDate() - day);
+  return d;
+}
+
+function monthKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+}
+
+function buildTrendBuckets(period) {
+  const now = new Date();
+  if (period === 'day') {
+    return Array.from({ length: 30 }, (_, idx) => {
+      const d = new Date(now);
+      d.setDate(d.getDate() - (29 - idx));
+      const key = d.toISOString().slice(0, 10);
+      return { key, label: key.slice(5) };
+    });
+  }
+  if (period === 'week') {
+    const start = startOfWeek(now);
+    return Array.from({ length: 12 }, (_, idx) => {
+      const d = new Date(start);
+      d.setDate(d.getDate() - (11 - idx) * 7);
+      return { key: d.toISOString().slice(0, 10), label: `${d.getMonth() + 1}/${d.getDate()}` };
+    });
+  }
+  return Array.from({ length: 12 }, (_, idx) => {
+    const d = new Date(now.getFullYear(), now.getMonth() - (11 - idx), 1);
+    return { key: monthKey(d), label: `${d.getMonth() + 1}월` };
+  });
+}
+
+function rowBucketKey(period, createdAtIso) {
+  const d = new Date(createdAtIso);
+  if (period === 'day') return d.toISOString().slice(0, 10);
+  if (period === 'week') return startOfWeek(d).toISOString().slice(0, 10);
+  return monthKey(d);
+}
+
+let trendChart = null;
 let deviceChart = null;
 
-function renderDailyChart(rows) {
-  const days = [];
-  const today = new Date();
-  for (let i = ANALYTICS_DAYS - 1; i >= 0; i--) {
-    const d = new Date(today);
-    d.setDate(d.getDate() - i);
-    days.push(d.toISOString().slice(0, 10));
-  }
-  const counts = Object.fromEntries(days.map(d => [d, 0]));
-  rows.forEach(r => {
-    const day = r.created_at.slice(0, 10);
-    if (day in counts) counts[day]++;
+function renderTrendChart(periodRows, period) {
+  const buckets = buildTrendBuckets(period);
+  const counts = Object.fromEntries(buckets.map(b => [b.key, 0]));
+  periodRows.forEach(r => {
+    const key = rowBucketKey(period, r.created_at);
+    if (key in counts) counts[key]++;
   });
 
   const light = isLightTheme();
@@ -1150,14 +1213,14 @@ function renderDailyChart(rows) {
   const gridColor = light ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.06)';
 
   const ctx = document.getElementById('chartDaily');
-  if (dailyChart) dailyChart.destroy();
-  dailyChart = new Chart(ctx, {
+  if (trendChart) trendChart.destroy();
+  trendChart = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: days.map(d => d.slice(5)),
+      labels: buckets.map(b => b.label),
       datasets: [{
         label: '방문수',
-        data: days.map(d => counts[d]),
+        data: buckets.map(b => counts[b.key]),
         borderColor: '#c9a961',
         backgroundColor: 'rgba(201,169,97,.15)',
         fill: true,
@@ -1169,7 +1232,7 @@ function renderDailyChart(rows) {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { color: tickColor, maxTicksLimit: 10 }, grid: { display: false } },
+        x: { ticks: { color: tickColor, maxTicksLimit: 12 }, grid: { display: false } },
         y: { ticks: { color: tickColor, precision: 0 }, grid: { color: gridColor } },
       },
     },
@@ -1194,33 +1257,73 @@ function renderDeviceChart(rows) {
   });
 }
 
-let analyticsRowsCache = null;
+/* 세션의 "최초 등장 시각"은 lookback 전체(최대 400일) 범위에서 계산해야, 이번
+   기간에 처음 잡힌 세션인지(신규) 이전부터 있었던 세션인지(재방문)를 정확히
+   구분할 수 있습니다. (lookback 이전의 첫 방문은 알 수 없어 근사치입니다) */
+function computeSessionFirstSeen(allRows) {
+  const map = new Map();
+  allRows.forEach(r => {
+    const existing = map.get(r.session_id);
+    if (!existing || r.created_at < existing) map.set(r.session_id, r.created_at);
+  });
+  return map;
+}
 
-function renderAnalyticsAll(rows) {
+function renderAnalyticsAll(allRows, period = analyticsPeriod) {
+  const rangeDays = PERIOD_RANGE_DAYS[period];
+  const rangeStartIso = new Date(Date.now() - rangeDays * 24 * 60 * 60 * 1000).toISOString();
+  const periodRows = allRows.filter(r => r.created_at >= rangeStartIso);
+  const firstSeen = computeSessionFirstSeen(allRows);
+
+  const sessionIdsInPeriod = new Set(periodRows.map(r => r.session_id));
+  let newCount = 0;
+  sessionIdsInPeriod.forEach(sid => { if ((firstSeen.get(sid) || '') >= rangeStartIso) newCount++; });
+  const returningCount = sessionIdsInPeriod.size - newCount;
+  const avgPagesPerSession = sessionIdsInPeriod.size ? (periodRows.length / sessionIdsInPeriod.size) : 0;
+
   const todayStr = new Date().toISOString().slice(0, 10);
-  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
-
-  const uniqueSessions = new Set(rows.map(r => r.session_id)).size;
-  const todayViews = rows.filter(r => r.created_at.slice(0, 10) === todayStr).length;
-  const weekViews = rows.filter(r => r.created_at >= weekAgo).length;
+  const weekAgoIso = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+  const todayViews = periodRows.filter(r => r.created_at.slice(0, 10) === todayStr).length;
+  const weekViews = periodRows.filter(r => r.created_at >= weekAgoIso).length;
 
   document.getElementById('analyticsStats').innerHTML = [
-    renderStatTile('최근 30일 총 방문', rows.length),
-    renderStatTile('순 방문자 수', uniqueSessions),
+    renderStatTile(`${PERIOD_RANGE_LABEL[period]} 총 방문`, periodRows.length),
+    renderStatTile('순 방문자 수', sessionIdsInPeriod.size),
     renderStatTile('오늘 방문', todayViews),
     renderStatTile('이번주 방문', weekViews),
   ].join('');
 
-  renderDailyChart(rows);
-  renderDeviceChart(rows);
+  document.getElementById('analyticsStats2').innerHTML = [
+    renderStatTile('신규 방문자', newCount),
+    renderStatTile('재방문자', returningCount),
+    renderStatTile('세션당 평균 조회수', avgPagesPerSession.toFixed(1)),
+  ].join('');
 
-  renderCountTable('topPagesBody', countBy(rows, r => r.path), '데이터가 없습니다.');
-  renderCountTable('topReferrersBody', countBy(rows, r => r.referrer_host || '직접 방문 / 알 수 없음'), '데이터가 없습니다.');
-  renderCountTable('topKeywordsBody', countBy(rows, r => r.search_keyword), '검색 유입 키워드가 없습니다.');
+  document.getElementById('trendChartTitle').textContent = PERIOD_TREND_TITLE[period];
+  renderTrendChart(periodRows, period);
+  renderDeviceChart(periodRows);
+
+  renderCountTable('topPagesBody', countBy(periodRows, r => r.path), '데이터가 없습니다.');
+  renderCountTable('topReferrersBody', countBy(periodRows, r => r.referrer_host || '직접 방문 / 알 수 없음'), '데이터가 없습니다.');
+  renderCountTable('topKeywordsBody', countBy(periodRows, r => r.search_keyword), '검색 유입 키워드가 없습니다.');
+  renderCountTable('topBrowsersBody', countBy(periodRows, r => r.browser || '기타'), '데이터가 없습니다.');
+  renderUtmTable(periodRows);
+}
+
+function initPeriodToggle() {
+  document.querySelectorAll('#periodToggle button').forEach(btn => {
+    btn.addEventListener('click', () => {
+      document.querySelectorAll('#periodToggle button').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      analyticsPeriod = btn.dataset.period;
+      if (analyticsRowsCache) renderAnalyticsAll(analyticsRowsCache);
+    });
+  });
 }
 
 async function initAnalyticsPanel() {
-  const since = new Date(Date.now() - ANALYTICS_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  initPeriodToggle();
+  const since = new Date(Date.now() - ANALYTICS_LOOKBACK_DAYS * 24 * 60 * 60 * 1000).toISOString();
   const { data, error } = await supabase.from('page_views').select('*').gte('created_at', since);
   if (error) {
     document.getElementById('analyticsStats').innerHTML = `<p class="text-muted">데이터를 불러오지 못했습니다: ${escapeHtml(error.message)}</p>`;
