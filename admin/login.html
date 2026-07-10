@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin Login | RAON DESIGNSTUDIO</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body>
+
+<div class="login-screen">
+  <div class="login-card">
+    <a href="../index.html" class="logo">RAON <span>DESIGN</span>STUDIO</a>
+    <p class="lead">관리자 로그인</p>
+
+    <div class="login-error" id="loginError"></div>
+
+    <form id="loginForm">
+      <div class="field">
+        <label for="email">이메일</label>
+        <input type="email" id="email" name="email" required autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="password">비밀번호</label>
+        <input type="password" id="password" name="password" required autocomplete="current-password">
+      </div>
+      <button type="submit" class="btn btn-primary form-submit">로그인</button>
+    </form>
+  </div>
+</div>
+
+<script type="module">
+  import { login, redirectIfLoggedIn, isSupabaseConfigured } from './js/auth.js';
+
+  redirectIfLoggedIn();
+
+  const form = document.getElementById('loginForm');
+  const errorBox = document.getElementById('loginError');
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+
+    if (!isSupabaseConfigured) {
+      errorBox.textContent = 'Supabase가 아직 설정되지 않았습니다. assets/js/supabase-config.js 파일을 확인해주세요.';
+      errorBox.classList.add('is-visible');
+      return;
+    }
+
+    const email = document.getElementById('email').value.trim();
+    const password = document.getElementById('password').value;
+
+    const { error } = await login(email, password);
+    if (error) {
+      errorBox.textContent = '로그인에 실패했습니다. 이메일과 비밀번호를 확인해주세요.';
+      errorBox.classList.add('is-visible');
+      return;
+    }
+    window.location.href = 'index.html';
+  });
+</script>
+</body>
+</html>

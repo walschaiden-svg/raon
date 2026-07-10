@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Portfolio | RAON DESIGNSTUDIO — 포트폴리오</title>
+<meta name="description" content="주거단지, 상업시설, 공공기관, 조감도 등 라온디자인스튜디오의 프로젝트를 확인하세요.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="logo">RAON <span>DESIGN</span>STUDIO<small>ARCHITECTURAL SCALE MODEL</small></a>
+    <nav class="nav-desktop">
+      <a href="index.html">HOME</a>
+      <a href="about.html">ABOUT</a>
+      <a href="portfolio.html">PORTFOLIO</a>
+      <a href="process.html">PROCESS</a>
+      <a href="contact.html">CONTACT</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="contact.html" class="btn btn-primary">문의하기</a>
+      <button class="nav-toggle" aria-label="메뉴 열기"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<nav class="mobile-nav">
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="portfolio.html">Portfolio</a>
+  <a href="process.html">Process</a>
+  <a href="contact.html">Contact</a>
+</nav>
+
+<section class="page-hero">
+  <span class="bg-num">WORKS</span>
+  <div class="container">
+    <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><span class="gold">Portfolio</span></div>
+    <span class="eyebrow">SELECTED WORKS</span>
+    <h1>정밀하게 완성한<br>프로젝트들</h1>
+    <p class="lead">주거단지부터 공공기관 조감도까지 — 라온디자인스튜디오가 제작한 다양한 건축 축소모형을 만나보세요.</p>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="filter-bar reveal" id="filterBar"></div>
+
+    <div class="filter-selects reveal">
+      <div class="filter-select-group">
+        <label for="regionFilter">지역</label>
+        <select id="regionFilter"><option value="all">전체 지역</option></select>
+      </div>
+      <div class="filter-select-group">
+        <label for="scaleFilter">스케일</label>
+        <select id="scaleFilter"><option value="all">전체 스케일</option></select>
+      </div>
+      <button type="button" class="filter-reset" id="filterReset">필터 초기화</button>
+    </div>
+
+    <p class="text-muted" id="resultCount" style="margin-bottom:24px; font-size:.88rem;"></p>
+
+    <div class="gallery-grid" id="galleryGrid"></div>
+    <div class="pagination" id="pagination"></div>
+  </div>
+</section>
+
+<section class="cta-banner">
+  <div class="container reveal">
+    <span class="eyebrow" style="justify-content:center;">GET IN TOUCH</span>
+    <h2>보여드리고 싶은 프로젝트가<br>더 많습니다</h2>
+    <a href="contact.html" class="btn btn-primary">프로젝트 문의하기</a>
+  </div>
+</section>
+
+<footer class="site-footer">
+  <div class="container">
+    <div class="footer-top">
+      <div class="footer-brand">
+        <a href="index.html" class="logo">RAON <span>DESIGN</span>STUDIO</a>
+        <p>건축 축소모형(Architectural Scale Model) 전문 제작 스튜디오. 정밀함으로 완성하는 건축의 축소판.</p>
+      </div>
+      <div class="footer-col">
+        <h4>Menu</h4>
+        <a href="about.html">About</a>
+        <a href="portfolio.html">Portfolio</a>
+        <a href="process.html">Process</a>
+        <a href="contact.html">Contact</a>
+      </div>
+      <div class="footer-col">
+        <h4>Contact</h4>
+        <a href="tel:+82-2-000-0000" id="footerPhone">02-000-0000</a>
+        <a href="mailto:contact@raondesignstudio.com" id="footerEmail">contact@raondesignstudio.com</a>
+        <p style="margin:0;" id="footerAddress">서울특별시 (주소 추후 확정)</p>
+      </div>
+      <div class="footer-col">
+        <h4>Follow</h4>
+        <div class="social-row">
+          <a href="#">Instagram</a>
+          <a href="#">Blog</a>
+        </div>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <p>&copy; <span data-year></span> RAON DESIGNSTUDIO. All rights reserved.</p>
+      <p>사업자등록번호 <span id="footerBizNo">000-00-00000</span> | 대표 <span id="footerCeo">000</span></p>
+    </div>
+  </div>
+</footer>
+
+<!-- ================= DETAIL MODAL ================= -->
+<div class="pf-modal" id="pfModal">
+  <div class="pf-modal-panel">
+    <button class="pf-modal-close" id="pfModalClose" aria-label="닫기">&times;</button>
+    <div class="pf-modal-images" id="pfModalImages"></div>
+    <div class="pf-modal-info" id="pfModalInfo"></div>
+  </div>
+</div>
+
+<!-- ================= IMAGE LIGHTBOX (원본 확대) ================= -->
+<div class="pf-lightbox" id="pfLightbox">
+  <button class="pf-lightbox-close" id="pfLightboxClose" aria-label="닫기">&times;</button>
+  <img id="pfLightboxImg" src="" alt="">
+</div>
+
+<script src="assets/js/main.js"></script>
+<script type="module" src="assets/js/portfolio.js"></script>
+</body>
+</html>

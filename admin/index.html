@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Admin | RAON DESIGNSTUDIO</title>
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="../assets/css/style.css">
+<link rel="stylesheet" href="../assets/css/admin.css">
+</head>
+<body class="admin-body">
+
+<aside class="admin-sidebar">
+  <a href="../index.html" class="logo">RAON <span>DESIGN</span>STUDIO</a>
+  <nav class="admin-nav">
+    <div class="nav-section-label">Content</div>
+    <a href="#home" data-panel="home" class="active">Home</a>
+    <a href="#about" data-panel="about">About</a>
+    <a href="#process" data-panel="process">Process</a>
+    <a href="#contact" data-panel="contact">Contact</a>
+    <div class="nav-section-label">Portfolio</div>
+    <a href="#portfolio" data-panel="portfolio">프로젝트 관리</a>
+  </nav>
+  <div class="admin-logout">
+    <button class="btn btn-outline" id="logoutBtn" style="width:100%; justify-content:center;">로그아웃</button>
+  </div>
+</aside>
+
+<main class="admin-main">
+
+  <!-- ============ HOME ============ -->
+  <section class="admin-panel active" id="panel-home">
+    <div class="admin-topbar">
+      <div><h1>Home 페이지</h1><p>홈페이지 히어로 문구와 강점 카드를 관리합니다.</p></div>
+    </div>
+
+    <div class="admin-card">
+      <h3>히어로 섹션</h3>
+      <p class="card-desc">첫 화면에 노출되는 문구와 배경 영상입니다.</p>
+      <div class="field"><label>Eyebrow (상단 소문구)</label><input type="text" id="h_eyebrow"></div>
+      <div class="form-row">
+        <div class="field"><label>타이틀 1줄</label><input type="text" id="h_title1"></div>
+        <div class="field"><label>타이틀 2줄 (강조)</label><input type="text" id="h_title2"></div>
+      </div>
+      <div class="field"><label>서브 문구</label><textarea id="h_subtitle"></textarea></div>
+      <div class="form-row">
+        <div class="field"><label>주요 버튼 텍스트</label><input type="text" id="h_cta1"></div>
+        <div class="field"><label>보조 버튼 텍스트</label><input type="text" id="h_cta2"></div>
+      </div>
+      <div class="field">
+        <label>히어로 배경 영상 URL</label>
+        <input type="text" id="h_video" placeholder="https://... 또는 업로드">
+        <div class="image-uploader">
+          <label class="upload-dropzone">영상 업로드<input type="file" accept="video/*" id="h_video_file"></label>
+        </div>
+      </div>
+      <div class="field">
+        <label>히어로 포스터 이미지 URL</label>
+        <input type="text" id="h_poster" placeholder="https://... 또는 업로드">
+        <div class="image-uploader">
+          <label class="upload-dropzone">이미지 업로드<input type="file" accept="image/*" id="h_poster_file"></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h3>강점 카드 (Why Raon)</h3>
+      <p class="card-desc">홈페이지 중단 강점 섹션에 노출되는 카드입니다.</p>
+      <div class="repeat-list" id="strengthsList"></div>
+      <button type="button" class="btn-add" id="addStrength" style="margin-top:14px;">+ 강점 카드 추가</button>
+    </div>
+
+    <div class="admin-save-bar">
+      <span class="save-status" id="homeSaveStatus"></span>
+      <button class="btn btn-primary" id="saveHome">저장하기</button>
+    </div>
+  </section>
+
+  <!-- ============ ABOUT ============ -->
+  <section class="admin-panel" id="panel-about">
+    <div class="admin-topbar">
+      <div><h1>About 페이지</h1><p>회사 소개, 연혁, 장비 스펙을 관리합니다.</p></div>
+    </div>
+
+    <div class="admin-card">
+      <h3>소개 섹션</h3>
+      <div class="field"><label>Eyebrow</label><input type="text" id="a_eyebrow"></div>
+      <div class="form-row">
+        <div class="field"><label>타이틀 1줄</label><input type="text" id="a_title1"></div>
+        <div class="field"><label>타이틀 2줄</label><input type="text" id="a_title2"></div>
+      </div>
+      <div class="field"><label>본문</label><textarea id="a_body" style="min-height:140px;"></textarea></div>
+      <div class="field">
+        <label>소개 이미지 URL</label>
+        <input type="text" id="a_image">
+        <div class="image-uploader">
+          <label class="upload-dropzone">이미지 업로드<input type="file" accept="image/*" id="a_image_file"></label>
+        </div>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h3>통계 (Stats)</h3>
+      <div class="repeat-list" id="statsList"></div>
+      <button type="button" class="btn-add" id="addStat" style="margin-top:14px;">+ 통계 추가</button>
+    </div>
+
+    <div class="admin-card">
+      <h3>연혁 (Timeline)</h3>
+      <div class="repeat-list" id="timelineList"></div>
+      <button type="button" class="btn-add" id="addTimeline" style="margin-top:14px;">+ 연혁 추가</button>
+    </div>
+
+    <div class="admin-card">
+      <h3>보유 장비 및 기술 스펙</h3>
+      <p class="card-desc">스펙은 "항목: 값" 형식으로 한 줄에 하나씩 입력하세요.</p>
+      <div class="repeat-list" id="equipList"></div>
+      <button type="button" class="btn-add" id="addEquip" style="margin-top:14px;">+ 장비 추가</button>
+    </div>
+
+    <div class="admin-card">
+      <h3>협력처 안내 문구</h3>
+      <div class="field"><label>안내 문구</label><input type="text" id="a_partners_note"></div>
+    </div>
+
+    <div class="admin-save-bar">
+      <span class="save-status" id="aboutSaveStatus"></span>
+      <button class="btn btn-primary" id="saveAbout">저장하기</button>
+    </div>
+  </section>
+
+  <!-- ============ PROCESS ============ -->
+  <section class="admin-panel" id="panel-process">
+    <div class="admin-topbar">
+      <div><h1>Process 페이지</h1><p>제작 공정 단계를 관리합니다.</p></div>
+    </div>
+    <div class="admin-card">
+      <h3>공정 단계</h3>
+      <p class="card-desc">태그는 쉼표(,)로 구분해 입력하세요.</p>
+      <div class="repeat-list" id="stepsList"></div>
+      <button type="button" class="btn-add" id="addStep" style="margin-top:14px;">+ 단계 추가</button>
+    </div>
+    <div class="admin-save-bar">
+      <span class="save-status" id="processSaveStatus"></span>
+      <button class="btn btn-primary" id="saveProcess">저장하기</button>
+    </div>
+  </section>
+
+  <!-- ============ CONTACT ============ -->
+  <section class="admin-panel" id="panel-contact">
+    <div class="admin-topbar">
+      <div><h1>Contact 페이지</h1><p>연락처 및 회사 정보를 관리합니다.</p></div>
+    </div>
+    <div class="admin-card">
+      <div class="form-row">
+        <div class="field"><label>주소</label><input type="text" id="c_address"></div>
+        <div class="field"><label>주소 부가 설명</label><input type="text" id="c_address_note"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>전화번호</label><input type="text" id="c_phone"></div>
+        <div class="field"><label>이메일</label><input type="text" id="c_email"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>운영시간</label><input type="text" id="c_hours"></div>
+        <div class="field"><label>운영시간 부가 설명</label><input type="text" id="c_hours_note"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>사업자등록번호</label><input type="text" id="c_biz"></div>
+        <div class="field"><label>대표자명</label><input type="text" id="c_ceo"></div>
+      </div>
+      <div class="field"><label>지도 영역 안내 문구</label><input type="text" id="c_map_note"></div>
+    </div>
+    <div class="admin-save-bar">
+      <span class="save-status" id="contactSaveStatus"></span>
+      <button class="btn btn-primary" id="saveContact">저장하기</button>
+    </div>
+  </section>
+
+  <!-- ============ PORTFOLIO ============ -->
+  <section class="admin-panel" id="panel-portfolio">
+    <div class="admin-topbar">
+      <div><h1>포트폴리오 관리</h1><p>프로젝트를 추가, 수정, 삭제할 수 있습니다.</p></div>
+      <button class="btn btn-primary" id="addProjectBtn">+ 새 프로젝트</button>
+    </div>
+
+    <div class="admin-card">
+      <h3>카테고리(메뉴) 관리</h3>
+      <p class="card-desc">홈페이지 포트폴리오 필터에 노출되는 메뉴 이름입니다. 숫자가 낮을수록 먼저 노출됩니다. 이름 변경 후 반드시 저장하세요.</p>
+      <div class="repeat-list" id="categoryList"></div>
+      <div style="display:flex; gap:10px; margin-top:14px;">
+        <button type="button" class="btn-add" id="addCategory">+ 카테고리 추가</button>
+        <button type="button" class="btn btn-primary" id="saveCategories">카테고리 저장</button>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-toolbar">
+        <select class="fc" id="pfFilterCategory" style="max-width:200px;">
+          <option value="all">전체 카테고리</option>
+        </select>
+        <span class="save-status" id="pfListStatus"></span>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>순서</th><th></th><th>제목</th><th>카테고리</th><th>연도</th><th>공개상태</th><th></th></tr>
+          </thead>
+          <tbody id="pfTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ PORTFOLIO ITEM MODAL ============ -->
+<div class="admin-modal" id="itemModal">
+  <div class="admin-modal-panel">
+    <div class="admin-modal-head">
+      <h3 id="itemModalTitle">새 프로젝트</h3>
+      <button class="admin-modal-close" id="itemModalClose">&times;</button>
+    </div>
+    <form id="itemForm">
+      <div class="field"><label>제목 *</label><input type="text" id="i_title" required></div>
+      <div class="form-row">
+        <div class="field">
+          <label>카테고리 *</label>
+          <select id="i_category" required></select>
+        </div>
+        <div class="field"><label>지역</label><input type="text" id="i_region" placeholder="예: 서울"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>발주처 / 고객</label><input type="text" id="i_client"></div>
+        <div class="field"><label>축척</label><input type="text" id="i_scale" placeholder="예: 1/200"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>연도</label><input type="text" id="i_year" placeholder="예: 2024"></div>
+        <div class="field"><label>제작 기간</label><input type="text" id="i_duration" placeholder="예: 8주"></div>
+      </div>
+      <div class="field">
+        <label>노출 순서</label>
+        <input type="number" id="i_sort_order" value="0">
+        <p class="card-desc" style="margin-top:6px;">숫자가 낮을수록 홈페이지에 먼저 노출됩니다. (관리용 값이며 사이트에는 표시되지 않습니다)</p>
+      </div>
+      <div class="field"><label>프로젝트 소개</label><textarea id="i_description" style="min-height:100px;"></textarea></div>
+
+      <div class="field">
+        <label>대표 이미지 (커버)</label>
+        <div class="image-uploader" id="i_cover_preview"></div>
+        <label class="upload-dropzone" style="margin-top:10px; width:100%;">커버 이미지 업로드<input type="file" accept="image/*" id="i_cover_file"></label>
+      </div>
+
+      <div class="field">
+        <label>상세 이미지 (여러 장 선택 가능)</label>
+        <div class="image-uploader" id="i_images_preview"></div>
+        <label class="upload-dropzone" style="margin-top:10px; width:100%;">상세 이미지 업로드<input type="file" accept="image/*" multiple id="i_images_file"></label>
+      </div>
+
+      <div class="field">
+        <label>유튜브 영상 URL (선택)</label>
+        <input type="text" id="i_youtube" placeholder="https://www.youtube.com/watch?v=... 또는 https://youtu.be/...">
+        <p class="card-desc" style="margin-top:6px;">입력하면 상세페이지 맨 앞에 영상이 자동재생(음소거)으로 배치됩니다. 비워두면 기존처럼 사진으로만 구성됩니다.</p>
+      </div>
+
+      <div class="checkbox-inline">
+        <input type="checkbox" id="i_published" checked>
+        <label for="i_published">사이트에 공개</label>
+      </div>
+
+      <div class="admin-modal-actions">
+        <button type="button" class="btn btn-outline" id="deleteItemBtn" style="display:none; margin-right:auto;">삭제</button>
+        <button type="button" class="btn btn-outline" id="cancelItemBtn">취소</button>
+        <button type="submit" class="btn btn-primary">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div class="admin-toast" id="adminToast"></div>
+
+<script type="module" src="js/dashboard.js"></script>
+</body>
+</html>
