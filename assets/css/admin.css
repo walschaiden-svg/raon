@@ -7,6 +7,26 @@ body.admin-body{
   min-height: 100vh;
 }
 
+/* ---------- Light theme override ---------- */
+body.admin-body.theme-light{
+  --bg: #f6f5f2;
+  --bg-soft: #ffffff;
+  --bg-elevated: #edece6;
+  --bg-elevated-2: #e3e1d8;
+  --border: rgba(0,0,0,0.09);
+  --border-strong: rgba(0,0,0,0.18);
+  --text: #16150f;
+  --text-muted: #57534a;
+  --text-faint: #8a8578;
+}
+
+.theme-toggle-btn{
+  position: fixed; top: 20px; right: 28px; z-index: 600;
+  background: var(--bg-elevated); border: 1px solid var(--border-strong); color: var(--text-muted);
+  padding: 9px 16px; font-size: .8rem; font-family: inherit; cursor: pointer; transition: all .2s;
+}
+.theme-toggle-btn:hover{ border-color: var(--gold-line); color: var(--gold); }
+
 /* ---------- Login ---------- */
 .login-screen{
   min-height: 100vh;
@@ -114,6 +134,11 @@ body.admin-body{
 .admin-table td{ padding: 14px; border-bottom: 1px solid var(--border); vertical-align: middle; color: var(--text-muted); }
 .admin-table tr:hover td{ background: var(--bg-elevated); }
 .admin-table .thumb{ width: 56px; height: 42px; object-fit: cover; background: var(--bg-elevated); }
+.admin-table .drag-handle{ cursor: grab; color: var(--text-faint); font-size: 14px; user-select: none; padding-right: 4px; }
+.admin-table tr[draggable="true"]{ cursor: grab; }
+.admin-table tr.row-dragging{ opacity: .4; }
+.admin-table tr.row-drag-over{ box-shadow: inset 0 2px 0 var(--gold); }
+.admin-table tr.row-drag-disabled .drag-handle{ opacity: .3; cursor: not-allowed; }
 .admin-table .t-title{ color: var(--text); font-weight: 500; }
 .admin-table .row-actions{ display: flex; gap: 8px; white-space: nowrap; }
 .admin-table .row-actions button{ font-size: .78rem; padding: 6px 12px; border: 1px solid var(--border-strong); background: transparent; color: var(--text-muted); }

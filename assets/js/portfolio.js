@@ -1,10 +1,11 @@
-import { fetchPortfolio, fetchPortfolioItem, fetchPortfolioFilters, fetchCategories, fetchPortfolioIds } from './content.js';
+import { fetchPortfolio, fetchPortfolioItem, fetchPortfolioFilters, fetchCategories, fetchPortfolioIds, fetchPageContent, getDefault } from './content.js';
 import { initFooter } from './footer.js';
 import { parseYoutubeId, youtubeThumbnail, youtubeEmbedUrl } from './youtube.js';
 
 const state = { category: 'all', region: 'all', scale: 'all', page: 1 };
 const itemCache = new Map();
 let categoryLabelMap = {};
+let fieldLabels = getDefault('portfolio').field_labels;
 let navIds = []; // ids of every item matching the current filters, in display order (spans all pages)
 let currentDetailId = null;
 
@@ -107,8 +108,14 @@ function populateSelect(id, values) {
 }
 
 async function initFilters() {
-  const [categories, filters] = await Promise.all([fetchCategories(), fetchPortfolioFilters()]);
+  const [categories, filters, portfolioContent] = await Promise.all([
+    fetchCategories(), fetchPortfolioFilters(), fetchPageContent('portfolio'),
+  ]);
   categoryLabelMap = Object.fromEntries(categories.map(c => [c.key, c.label]));
+  fieldLabels = portfolioContent.field_labels || fieldLabels;
+
+  document.getElementById('regionFilterLabel').textContent = fieldLabels.region;
+  document.getElementById('scaleFilterLabel').textContent = fieldLabels.scale;
 
   renderCategoryTabs(categories);
   populateSelect('regionFilter', filters.regions);
@@ -212,11 +219,11 @@ async function openDetail(id) {
     <span class="pf-type">${categoryLabelMap[item.category] || ''}</span>
     <h3>${item.title}</h3>
     <div class="pf-spec-list">
-      ${item.client ? `<div class="pf-spec-row"><span>Client</span><span>${item.client}</span></div>` : ''}
-      ${item.region ? `<div class="pf-spec-row"><span>Region</span><span>${item.region}</span></div>` : ''}
-      ${item.scale ? `<div class="pf-spec-row"><span>Scale</span><span>${item.scale}</span></div>` : ''}
-      ${item.duration ? `<div class="pf-spec-row"><span>Duration</span><span>${item.duration}</span></div>` : ''}
-      ${item.year ? `<div class="pf-spec-row"><span>Year</span><span>${item.year}</span></div>` : ''}
+      ${item.client ? `<div class="pf-spec-row"><span>${fieldLabels.client}</span><span>${item.client}</span></div>` : ''}
+      ${item.region ? `<div class="pf-spec-row"><span>${fieldLabels.region}</span><span>${item.region}</span></div>` : ''}
+      ${item.scale ? `<div class="pf-spec-row"><span>${fieldLabels.scale}</span><span>${item.scale}</span></div>` : ''}
+      ${item.duration ? `<div class="pf-spec-row"><span>${fieldLabels.duration}</span><span>${item.duration}</span></div>` : ''}
+      ${item.year ? `<div class="pf-spec-row"><span>${fieldLabels.year}</span><span>${item.year}</span></div>` : ''}
     </div>
     <div class="pf-desc-label">프로젝트 소개</div>
     <div class="pf-desc">${item.description || '상세 설명이 등록되지 않았습니다.'}</div>

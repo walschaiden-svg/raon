@@ -488,6 +488,48 @@ function initCategoryManager() {
 }
 
 /* ---------------------------------------------------------------------------
+   필드 라벨 관리 (지역/발주처/축척/연도/제작기간)
+--------------------------------------------------------------------------- */
+let fieldLabels = {};
+
+function applyFieldLabels() {
+  document.getElementById('i_region_label').textContent = fieldLabels.region || '지역';
+  document.getElementById('i_client_label').textContent = fieldLabels.client || '발주처 / 고객';
+  document.getElementById('i_scale_label').textContent = fieldLabels.scale || '축척';
+  document.getElementById('i_year_label').textContent = fieldLabels.year || '연도';
+  document.getElementById('i_duration_label').textContent = fieldLabels.duration || '제작 기간';
+}
+
+async function initFieldLabelsPanel() {
+  const portfolio = await loadContent('portfolio');
+  fieldLabels = portfolio.field_labels || {};
+  applyFieldLabels();
+
+  document.getElementById('fl_region').value = fieldLabels.region || '';
+  document.getElementById('fl_client').value = fieldLabels.client || '';
+  document.getElementById('fl_scale').value = fieldLabels.scale || '';
+  document.getElementById('fl_year').value = fieldLabels.year || '';
+  document.getElementById('fl_duration').value = fieldLabels.duration || '';
+
+  document.getElementById('saveFieldLabels').addEventListener('click', async () => {
+    fieldLabels = {
+      region: document.getElementById('fl_region').value.trim() || '지역',
+      client: document.getElementById('fl_client').value.trim() || '발주처 / 고객',
+      scale: document.getElementById('fl_scale').value.trim() || '축척',
+      year: document.getElementById('fl_year').value.trim() || '연도',
+      duration: document.getElementById('fl_duration').value.trim() || '제작 기간',
+    };
+    try {
+      await saveContent('portfolio', { field_labels: fieldLabels });
+      applyFieldLabels();
+      toast('필드 라벨이 저장되었습니다.');
+    } catch (err) {
+      toast('저장 실패: ' + err.message, true);
+    }
+  });
+}
+
+/* ---------------------------------------------------------------------------
    PORTFOLIO 패널
 --------------------------------------------------------------------------- */
 let pfCurrentCategory = 'all';
@@ -495,9 +537,11 @@ let editingItem = null;
 let coverImageUrl = '';
 let detailImages = [];
 
+let pfListCache = [];
+
 async function loadPortfolioList() {
   setStatus('pfListStatus', '불러오는 중...', true);
-  let query = supabase.from('portfolio_items').select('*').order('sort_order', { ascending: true }).order('created_at', { ascending: false });
+  let query = supabase.from('portfolio_items').select('*').order('sort_order', { ascending: false }).order('created_at', { ascending: false });
   if (pfCurrentCategory !== 'all') query = query.eq('category', pfCurrentCategory);
   const { data, error } = await query;
   if (error) {
@@ -505,17 +549,27 @@ async function loadPortfolioList() {
     return;
   }
   setStatus('pfListStatus', `총 ${data.length}건`, true);
+  pfListCache = data;
   renderPortfolioTable(data);
+}
+
+async function nextSortOrder() {
+  const { data } = await supabase.from('portfolio_items').select('sort_order').order('sort_order', { ascending: false }).limit(1);
+  return data && data.length ? (data[0].sort_order || 0) + 1 : 1;
 }
 
 function renderPortfolioTable(items) {
   const tbody = document.getElementById('pfTableBody');
+  const dragEnabled = pfCurrentCategory === 'all';
+  document.getElementById('pfDragHint').style.display = dragEnabled ? '' : 'none';
+
   if (!items.length) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px;">등록된 프로젝트가 없습니다.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="8" style="text-align:center; padding:32px;">등록된 프로젝트가 없습니다.</td></tr>`;
     return;
   }
   tbody.innerHTML = items.map(p => `
-    <tr>
+    <tr data-id="${p.id}" class="${dragEnabled ? '' : 'row-drag-disabled'}" draggable="${dragEnabled}">
+      <td class="drag-handle">⠿</td>
       <td>${p.sort_order ?? 0}</td>
       <td><img class="thumb" src="${p.cover_image_url || ''}" alt=""></td>
       <td class="t-title">${escapeHtml(p.title)}${p.featured ? ' <span class="status-pill published">대표</span>' : ''}</td>
@@ -535,6 +589,64 @@ function renderPortfolioTable(items) {
   tbody.querySelectorAll('[data-delete]').forEach(btn => {
     btn.addEventListener('click', () => deleteItem(btn.dataset.delete));
   });
+
+  if (dragEnabled) bindPortfolioRowDrag(tbody);
+}
+
+let dragSourceRow = null;
+
+function bindPortfolioRowDrag(tbody) {
+  const rows = () => Array.from(tbody.querySelectorAll('tr[draggable="true"]'));
+
+  tbody.querySelectorAll('tr[draggable="true"]').forEach(row => {
+    row.addEventListener('dragstart', () => {
+      dragSourceRow = row;
+      row.classList.add('row-dragging');
+    });
+    row.addEventListener('dragend', () => {
+      row.classList.remove('row-dragging');
+      rows().forEach(r => r.classList.remove('row-drag-over'));
+    });
+    row.addEventListener('dragover', (e) => {
+      e.preventDefault();
+      if (row === dragSourceRow) return;
+      row.classList.add('row-drag-over');
+    });
+    row.addEventListener('dragleave', () => row.classList.remove('row-drag-over'));
+    row.addEventListener('drop', async (e) => {
+      e.preventDefault();
+      row.classList.remove('row-drag-over');
+      if (!dragSourceRow || row === dragSourceRow) return;
+
+      const all = rows();
+      const fromIdx = all.indexOf(dragSourceRow);
+      const toIdx = all.indexOf(row);
+      if (fromIdx === -1 || toIdx === -1) return;
+
+      if (fromIdx < toIdx) row.after(dragSourceRow);
+      else row.before(dragSourceRow);
+
+      await persistPortfolioOrder(tbody);
+    });
+  });
+}
+
+async function persistPortfolioOrder(tbody) {
+  const ids = Array.from(tbody.querySelectorAll('tr[data-id]')).map(r => r.dataset.id);
+  const total = ids.length;
+  setStatus('pfListStatus', '순서 저장 중...', true);
+  try {
+    const results = await Promise.all(ids.map((id, i) =>
+      supabase.from('portfolio_items').update({ sort_order: total - i }).eq('id', id)
+    ));
+    const failed = results.find(r => r.error);
+    if (failed) throw failed.error;
+    toast('순서가 저장되었습니다.');
+    loadPortfolioList();
+  } catch (err) {
+    toast('순서 저장 실패: ' + err.message, true);
+    setStatus('pfListStatus', '순서 저장 실패', false);
+  }
 }
 
 function renderImagePreview(containerId, urls, { single = false } = {}) {
@@ -565,7 +677,6 @@ function openItemModal(item) {
   document.getElementById('i_year').value = item?.year || '';
   document.getElementById('i_duration').value = item?.duration || '';
   document.getElementById('i_description').value = item?.description || '';
-  document.getElementById('i_sort_order').value = item?.sort_order ?? 0;
   document.getElementById('i_youtube').value = item?.youtube_url || '';
   document.getElementById('i_published').checked = item ? !!item.published : true;
   document.getElementById('i_featured').checked = item ? !!item.featured : false;
@@ -594,6 +705,7 @@ async function deleteItem(id) {
 async function initPortfolioPanel() {
   initCategoryManager();
   await loadCategories();
+  await initFieldLabelsPanel();
   loadPortfolioList();
 
   document.getElementById('pfFilterCategory').addEventListener('change', (e) => {
@@ -651,11 +763,11 @@ async function initPortfolioPanel() {
       cover_image_url: coverImageUrl,
       images: detailImages,
       youtube_url: document.getElementById('i_youtube').value.trim(),
-      sort_order: Number(document.getElementById('i_sort_order').value) || 0,
       published: document.getElementById('i_published').checked,
       featured: document.getElementById('i_featured').checked,
     };
     if (!payload.title) { toast('제목을 입력해주세요.', true); return; }
+    if (!editingItem) payload.sort_order = await nextSortOrder();
 
     try {
       if (editingItem) {
@@ -1012,6 +1124,10 @@ function renderCountTable(bodyId, pairs, emptyMsg) {
   `).join('');
 }
 
+function isLightTheme() {
+  return document.body.classList.contains('theme-light');
+}
+
 let dailyChart = null;
 let deviceChart = null;
 
@@ -1028,6 +1144,10 @@ function renderDailyChart(rows) {
     const day = r.created_at.slice(0, 10);
     if (day in counts) counts[day]++;
   });
+
+  const light = isLightTheme();
+  const tickColor = light ? '#57534a' : '#8a8578';
+  const gridColor = light ? 'rgba(0,0,0,.08)' : 'rgba(255,255,255,.06)';
 
   const ctx = document.getElementById('chartDaily');
   if (dailyChart) dailyChart.destroy();
@@ -1049,8 +1169,8 @@ function renderDailyChart(rows) {
       responsive: true, maintainAspectRatio: false,
       plugins: { legend: { display: false } },
       scales: {
-        x: { ticks: { color: '#8a8578', maxTicksLimit: 10 }, grid: { display: false } },
-        y: { ticks: { color: '#8a8578', precision: 0 }, grid: { color: 'rgba(255,255,255,.06)' } },
+        x: { ticks: { color: tickColor, maxTicksLimit: 10 }, grid: { display: false } },
+        y: { ticks: { color: tickColor, precision: 0 }, grid: { color: gridColor } },
       },
     },
   });
@@ -1058,6 +1178,7 @@ function renderDailyChart(rows) {
 
 function renderDeviceChart(rows) {
   const pairs = countBy(rows, r => DEVICE_LABEL[r.device] || r.device || '기타');
+  const legendColor = isLightTheme() ? '#16150f' : '#e8e4d9';
   const ctx = document.getElementById('chartDevice');
   if (deviceChart) deviceChart.destroy();
   deviceChart = new Chart(ctx, {
@@ -1068,7 +1189,7 @@ function renderDeviceChart(rows) {
     },
     options: {
       responsive: true, maintainAspectRatio: false,
-      plugins: { legend: { position: 'bottom', labels: { color: '#e8e4d9' } } },
+      plugins: { legend: { position: 'bottom', labels: { color: legendColor } } },
     },
   });
 }
@@ -1112,6 +1233,30 @@ async function initAnalyticsPanel() {
 }
 
 /* ---------------------------------------------------------------------------
+   화이트/다크 테마 전환
+--------------------------------------------------------------------------- */
+const THEME_KEY = 'admin-theme';
+
+function applyTheme(theme) {
+  document.body.classList.toggle('theme-light', theme === 'light');
+  document.getElementById('themeToggleBtn').textContent = theme === 'light' ? '다크 모드' : '라이트 모드';
+  if (analyticsRowsCache && document.getElementById('panel-analytics').classList.contains('active')) {
+    renderAnalyticsAll(analyticsRowsCache);
+  }
+}
+
+function initThemeToggle() {
+  const saved = localStorage.getItem(THEME_KEY) || 'dark';
+  applyTheme(saved);
+
+  document.getElementById('themeToggleBtn').addEventListener('click', () => {
+    const next = isLightTheme() ? 'dark' : 'light';
+    localStorage.setItem(THEME_KEY, next);
+    applyTheme(next);
+  });
+}
+
+/* ---------------------------------------------------------------------------
    사이드바 네비게이션
 --------------------------------------------------------------------------- */
 function initNav() {
@@ -1148,6 +1293,7 @@ async function init() {
   document.getElementById('logoutBtn').addEventListener('click', logout);
   initNav();
   initDropzones();
+  initThemeToggle();
 
   await Promise.all([
     initHomePanel(),

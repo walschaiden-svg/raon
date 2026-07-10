@@ -81,6 +81,15 @@ export const DEFAULT_CONTENT = {
 4. 동의 거부 권리 및 불이익 안내
 귀하는 개인정보 수집·이용에 대한 동의를 거부할 권리가 있습니다. 다만, 동의하지 않으실 경우 견적 문의 접수 및 상담 진행이 제한될 수 있습니다.`,
   },
+  portfolio: {
+    field_labels: {
+      region: '지역',
+      client: '발주처 / 고객',
+      scale: '축척',
+      year: '연도',
+      duration: '제작 기간',
+    },
+  },
 };
 
 const FALLBACK_PORTFOLIO = [
@@ -131,7 +140,7 @@ export async function fetchPortfolio({ category = 'all', region = 'all', scale =
     if (category !== 'all') query = query.eq('category', category);
     if (region !== 'all') query = query.eq('region', region);
     if (scale !== 'all') query = query.eq('scale', scale);
-    query = query.order('sort_order', { ascending: true }).order('created_at', { ascending: false }).range(from, to);
+    query = query.order('sort_order', { ascending: false }).order('created_at', { ascending: false }).range(from, to);
     const { data, count, error } = await query;
     if (error) throw error;
     return {
@@ -199,7 +208,7 @@ export async function fetchPortfolioIds({ category = 'all', region = 'all', scal
     if (category !== 'all') query = query.eq('category', category);
     if (region !== 'all') query = query.eq('region', region);
     if (scale !== 'all') query = query.eq('scale', scale);
-    query = query.order('sort_order', { ascending: true }).order('created_at', { ascending: false });
+    query = query.order('sort_order', { ascending: false }).order('created_at', { ascending: false });
     const { data, error } = await query;
     if (error) throw error;
     return (data || []).map(i => String(i.id));
