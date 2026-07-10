@@ -637,6 +637,11 @@ async function initPortfolioPanel() {
 --------------------------------------------------------------------------- */
 const FEATURED_COLUMNS = 6;
 let featuredGrid = null;
+
+// Gridstack v9+ no longer auto-injects widget.content into the DOM (XSS
+// hardening) — it must be wired up explicitly via this render callback,
+// otherwise tiles stay empty even though drag/resize still works fine.
+GridStack.renderCB = (el, w) => { el.innerHTML = w.content || ''; };
 let featuredItemsCache = [];
 
 async function loadFeaturedItems() {
