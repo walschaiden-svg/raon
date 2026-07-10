@@ -614,8 +614,15 @@ section{ position: relative; }
 }
 
 /* ---------- Portfolio detail modal ---------- */
+/* The group controls the actual move/resize morph; old/new only control
+   the image cross-fade. Both need slowing down together or the shape
+   snaps into place before the fade finishes and reads as instant. */
+::view-transition-group(pf-detail-img){
+  animation-duration: .7s;
+  animation-timing-function: cubic-bezier(.22,.61,.36,1);
+}
 ::view-transition-old(pf-detail-img),
-::view-transition-new(pf-detail-img){ animation-duration: .5s; }
+::view-transition-new(pf-detail-img){ animation-duration: .7s; }
 
 .pf-modal{
   position: fixed; inset: 0; z-index: 200;
