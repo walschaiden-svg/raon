@@ -145,16 +145,19 @@ body.admin-body{
 
 /* ---------- Featured projects grid editor (Gridstack) ---------- */
 .grid-stack{ background: var(--bg-elevated); border: 1px solid var(--border); }
+/* NOTE: do not set position/display on .grid-stack-item-content — Gridstack's
+   own stylesheet makes it position:absolute + inset:0 to fill the tile
+   (that's how tiles get their width/height at all). Overriding it here
+   previously collapsed every tile to the width of its title text. */
 .grid-stack .grid-stack-item-content{
-  background: #000; overflow: hidden; border: 1px solid var(--border-strong);
-  display: flex; align-items: flex-end; position: relative; cursor: grab;
+  background: #000; overflow: hidden; border: 1px solid var(--border-strong); cursor: grab;
 }
 .grid-stack .grid-stack-item-content img{
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55;
 }
 .grid-stack .grid-stack-item-content .ft-title{
-  position: relative; z-index: 1; padding: 10px 12px; font-size: .8rem; color: #fff;
-  background: linear-gradient(0deg, rgba(0,0,0,.75), transparent); width: 100%;
+  position: absolute; left: 0; right: 0; bottom: 0; z-index: 1; padding: 10px 12px; font-size: .8rem; color: #fff;
+  background: linear-gradient(0deg, rgba(0,0,0,.75), transparent);
 }
 .grid-stack .ui-resizable-se{ z-index: 2; }
 
