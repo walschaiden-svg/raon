@@ -11,7 +11,7 @@ let currentDetailId = null;
 function renderGrid(items) {
   const grid = document.getElementById('galleryGrid');
   if (!items.length) {
-    grid.innerHTML = `<p class="text-muted" style="grid-column:1/-1; text-align:center; padding:60px 0;">해당 조건의 프로젝트가 없습니다.</p>`;
+    grid.innerHTML = `<p class="text-muted" style="text-align:center; padding:60px 0;">해당 조건의 프로젝트가 없습니다.</p>`;
     return;
   }
   grid.innerHTML = items.map((p, i) => `
