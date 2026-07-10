@@ -84,6 +84,9 @@
           <div class="form-success" style="margin-top:28px;">
             문의가 정상적으로 접수되었습니다. 빠른 시일 내에 회신드리겠습니다.
           </div>
+          <div class="form-error" style="margin-top:28px;">
+            문의 접수 중 오류가 발생했습니다. 잠시 후 다시 시도해주시거나 전화로 문의해주세요.
+          </div>
 
           <form id="quote-form" novalidate style="margin-top:28px;">
             <div class="form-row">
@@ -122,10 +125,10 @@
                 <label for="budget">예상 예산 (선택)</label>
                 <select id="budget" name="budget">
                   <option value="">선택해주세요</option>
-                  <option value="under300">300만원 미만</option>
-                  <option value="300to1000">300만원 ~ 1,000만원</option>
-                  <option value="1000to3000">1,000만원 ~ 3,000만원</option>
-                  <option value="over3000">3,000만원 이상</option>
+                  <option value="under300">500만원 미만</option>
+                  <option value="300to1000">500만원 ~ 1,000만원</option>
+                  <option value="1000to3000">1,000만원 ~ 5,000만원</option>
+                  <option value="over3000">5,000만원 이상</option>
                   <option value="undecided">미정 / 상담 후 결정</option>
                 </select>
               </div>
@@ -139,11 +142,10 @@
 
             <div class="checkbox-field">
               <input type="checkbox" id="agree" name="agree" required>
-              <label for="agree">개인정보 수집 및 이용에 동의합니다. (견적 상담 목적, 문의 처리 후 즉시 파기 — <a href="#">자세히 보기</a>)</label>
+              <label for="agree">개인정보 수집 및 이용에 동의합니다. (<a href="#" id="privacyDetailLink">자세히 보기</a>)</label>
             </div>
 
             <button type="submit" class="btn btn-primary form-submit">문의 접수하기</button>
-            <p class="form-note">* 현재 폼은 프론트엔드 검증 단계이며, 접수 내용은 담당자에게 별도로 전달됩니다.</p>
           </form>
         </div>
       </div>
@@ -187,7 +189,19 @@
   </div>
 </footer>
 
+<!-- ================= PRIVACY POLICY MODAL ================= -->
+<div class="info-modal" id="privacyModal">
+  <div class="info-modal-panel">
+    <div class="info-modal-head">
+      <h3>개인정보 수집 및 이용 안내</h3>
+      <button class="info-modal-close" id="privacyModalClose" aria-label="닫기">&times;</button>
+    </div>
+    <div class="info-modal-body" id="privacyModalBody"></div>
+  </div>
+</div>
+
 <script src="assets/js/main.js"></script>
+<script type="module" src="assets/js/analytics.js"></script>
 <script type="module" src="assets/js/contact.js"></script>
 </body>
 </html>

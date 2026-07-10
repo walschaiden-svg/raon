@@ -49,6 +49,10 @@ body.admin-body{
 .admin-nav a:hover{ color: var(--text); background: var(--bg-elevated); }
 .admin-nav a.active{ color: var(--gold); border-left-color: var(--gold); background: var(--bg-elevated); }
 .admin-nav .nav-section-label{ font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--text-faint); padding: 20px 24px 8px; }
+.nav-badge{
+  margin-left: auto; background: var(--gold); color: #14110a;
+  font-size: 10.5px; font-weight: 700; padding: 1px 7px; border-radius: 10px;
+}
 .admin-logout{ margin-top: auto; padding: 20px 24px 0; }
 
 .admin-main{ flex: 1; min-width: 0; padding: 40px 48px 100px; }
@@ -119,6 +123,34 @@ body.admin-body{
 .status-pill.published{ border-color: var(--gold-line); color: var(--gold); }
 
 .admin-toolbar{ display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; gap: 16px; flex-wrap: wrap; }
+
+.fc{
+  background: var(--bg-elevated); border: 1px solid var(--border-strong); color: var(--text);
+  padding: 9px 12px; font-size: .86rem; font-family: inherit; border-radius: 2px; cursor: pointer;
+}
+.fc:focus{ outline: none; border-color: var(--gold-line); }
+
+/* ---------- Analytics dashboard ---------- */
+.analytics-stats{ display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; margin-bottom: 28px; }
+.analytics-stat{ border: 1px solid var(--border); background: var(--bg-soft); padding: 22px 24px; }
+.analytics-stat .stat-label{ font-size: 11px; letter-spacing: .1em; text-transform: uppercase; color: var(--text-faint); }
+.analytics-stat .stat-value{ font-size: 1.9rem; font-family: var(--serif-en); color: var(--gold); margin-top: 8px; }
+.analytics-grid{ display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.chart-wrap{ position: relative; height: 260px; }
+.chart-wrap-sm{ height: 220px; max-width: 320px; margin: 0 auto; }
+@media (max-width: 900px){
+  .analytics-stats{ grid-template-columns: repeat(2, 1fr); }
+  .analytics-grid{ grid-template-columns: 1fr; }
+}
+
+/* ---------- Inquiries ---------- */
+.status-select{
+  background: var(--bg-elevated); border: 1px solid var(--border-strong); color: var(--text);
+  font-size: .78rem; padding: 5px 8px; font-family: inherit;
+}
+.inquiry-detail-row{ display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px solid var(--border); font-size: .88rem; }
+.inquiry-detail-row span:first-child{ color: var(--text-faint); }
+.inquiry-detail-message{ margin-top: 16px; padding: 16px; background: var(--bg-elevated); font-size: .86rem; line-height: 1.7; white-space: pre-wrap; color: var(--text-muted); }
 
 /* ---------- Image upload ---------- */
 .image-uploader{ display: flex; flex-wrap: wrap; gap: 12px; margin-top: 12px; }

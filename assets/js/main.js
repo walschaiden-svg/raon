@@ -104,8 +104,6 @@ document.addEventListener('DOMContentLoaded', () => {
   /* ---------- Contact form validation ---------- */
   const form = document.querySelector('#quote-form');
   if (form) {
-    const successBox = document.querySelector('.form-success');
-
     const validators = {
       name: (v) => v.trim().length >= 2,
       phone: (v) => /^[0-9-+() ]{9,14}$/.test(v.trim()),
@@ -148,15 +146,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
 
       const data = Object.fromEntries(new FormData(form).entries());
-      // NOTE: backend integration pending — logging payload for now.
-      console.log('[RAON DESIGNSTUDIO] Quote inquiry submitted:', data);
-
-      form.reset();
-      if (successBox) {
-        successBox.classList.add('is-visible');
-        successBox.scrollIntoView({ behavior: 'smooth', block: 'center' });
-        setTimeout(() => successBox.classList.remove('is-visible'), 6000);
-      }
+      form.dispatchEvent(new CustomEvent('raon:quote-valid', { detail: data }));
     });
   }
 });

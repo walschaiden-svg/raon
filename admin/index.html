@@ -20,6 +20,9 @@
     <a href="#contact" data-panel="contact">Contact</a>
     <div class="nav-section-label">Portfolio</div>
     <a href="#portfolio" data-panel="portfolio">프로젝트 관리</a>
+    <div class="nav-section-label">CRM</div>
+    <a href="#inquiries" data-panel="inquiries">견적 문의 <span class="nav-badge" id="inquiryBadge" style="display:none;"></span></a>
+    <a href="#analytics" data-panel="analytics">방문자 분석</a>
   </nav>
   <div class="admin-logout">
     <button class="btn btn-outline" id="logoutBtn" style="width:100%; justify-content:center;">로그아웃</button>
@@ -170,6 +173,12 @@
       </div>
       <div class="field"><label>지도 영역 안내 문구</label><input type="text" id="c_map_note"></div>
     </div>
+
+    <div class="admin-card">
+      <h3>개인정보 수집·이용 동의 문구</h3>
+      <p class="card-desc">견적 문의 폼의 "자세히 보기" 클릭 시 노출되는 개인정보 처리 안내 전문입니다.</p>
+      <div class="field"><textarea id="c_privacy_policy" style="min-height:220px;"></textarea></div>
+    </div>
     <div class="admin-save-bar">
       <span class="save-status" id="contactSaveStatus"></span>
       <button class="btn btn-primary" id="saveContact">저장하기</button>
@@ -211,7 +220,95 @@
     </div>
   </section>
 
+  <!-- ============ INQUIRIES ============ -->
+  <section class="admin-panel" id="panel-inquiries">
+    <div class="admin-topbar">
+      <div><h1>견적 문의 관리</h1><p>홈페이지 견적 문의 폼으로 접수된 내역입니다.</p></div>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-toolbar">
+        <select class="fc" id="inqFilterStatus" style="max-width:200px;">
+          <option value="all">전체 상태</option>
+          <option value="new">신규</option>
+          <option value="contacted">연락완료</option>
+          <option value="closed">종결</option>
+        </select>
+        <span class="save-status" id="inqListStatus"></span>
+      </div>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th>접수일</th><th>이름</th><th>연락처</th><th>이메일</th><th>유형</th><th>상태</th><th></th></tr>
+          </thead>
+          <tbody id="inqTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ ANALYTICS ============ -->
+  <section class="admin-panel" id="panel-analytics">
+    <div class="admin-topbar">
+      <div><h1>방문자 분석</h1><p>최근 30일 기준 방문 통계입니다.</p></div>
+    </div>
+
+    <div class="analytics-stats" id="analyticsStats"></div>
+
+    <div class="admin-card">
+      <h3>일별 방문 추이</h3>
+      <div class="chart-wrap"><canvas id="chartDaily"></canvas></div>
+    </div>
+
+    <div class="analytics-grid">
+      <div class="admin-card">
+        <h3>인기 페이지</h3>
+        <div class="admin-table-wrap">
+          <table class="admin-table"><thead><tr><th>경로</th><th>조회수</th></tr></thead><tbody id="topPagesBody"></tbody></table>
+        </div>
+      </div>
+      <div class="admin-card">
+        <h3>유입 경로 (Referrer)</h3>
+        <div class="admin-table-wrap">
+          <table class="admin-table"><thead><tr><th>유입처</th><th>방문수</th></tr></thead><tbody id="topReferrersBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+
+    <div class="analytics-grid">
+      <div class="admin-card">
+        <h3>기기 분포</h3>
+        <div class="chart-wrap chart-wrap-sm"><canvas id="chartDevice"></canvas></div>
+      </div>
+      <div class="admin-card">
+        <h3>검색 유입 키워드</h3>
+        <div class="admin-table-wrap">
+          <table class="admin-table"><thead><tr><th>키워드</th><th>횟수</th></tr></thead><tbody id="topKeywordsBody"></tbody></table>
+        </div>
+      </div>
+    </div>
+  </section>
+
 </main>
+
+<!-- ============ INQUIRY DETAIL MODAL ============ -->
+<div class="admin-modal" id="inquiryModal">
+  <div class="admin-modal-panel" style="max-width:560px;">
+    <div class="admin-modal-head">
+      <h3>문의 상세</h3>
+      <button class="admin-modal-close" id="inquiryModalClose">&times;</button>
+    </div>
+    <div id="inquiryModalBody"></div>
+    <div class="admin-modal-actions">
+      <button type="button" class="btn btn-outline" id="deleteInquiryBtn" style="margin-right:auto;">삭제</button>
+      <select id="inquiryStatusSelect" class="fc">
+        <option value="new">신규</option>
+        <option value="contacted">연락완료</option>
+        <option value="closed">종결</option>
+      </select>
+    </div>
+  </div>
+</div>
 
 <!-- ============ PORTFOLIO ITEM MODAL ============ -->
 <div class="admin-modal" id="itemModal">
@@ -278,6 +375,7 @@
 
 <div class="admin-toast" id="adminToast"></div>
 
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script type="module" src="js/dashboard.js"></script>
 </body>
 </html>

@@ -326,6 +326,7 @@ async function initContactPanel() {
   document.getElementById('c_biz').value = contact.business_number || '';
   document.getElementById('c_ceo').value = contact.ceo_name || '';
   document.getElementById('c_map_note').value = contact.map_note || '';
+  document.getElementById('c_privacy_policy').value = contact.privacy_policy || '';
 
   document.getElementById('saveContact').addEventListener('click', async () => {
     const data = {
@@ -338,6 +339,7 @@ async function initContactPanel() {
       business_number: document.getElementById('c_biz').value,
       ceo_name: document.getElementById('c_ceo').value,
       map_note: document.getElementById('c_map_note').value,
+      privacy_policy: document.getElementById('c_privacy_policy').value,
     };
     try {
       await saveContent('contact', data);
@@ -629,6 +631,241 @@ async function initPortfolioPanel() {
 }
 
 /* ---------------------------------------------------------------------------
+   견적 문의 (INQUIRIES) 패널
+--------------------------------------------------------------------------- */
+const PROJECT_TYPE_LABEL = { residential: '주거단지', commercial: '상업시설', public: '공공기관/입찰', personal: '개인 소장용', etc: '기타' };
+const INQUIRY_STATUS_LABEL = { new: '신규', contacted: '연락완료', closed: '종결' };
+
+let inqCurrentStatus = 'all';
+let inquiriesCache = [];
+let currentInquiry = null;
+
+async function refreshInquiryBadge() {
+  const { count, error } = await supabase.from('inquiries').select('id', { count: 'exact', head: true }).eq('status', 'new');
+  const badge = document.getElementById('inquiryBadge');
+  if (error || !count) { badge.style.display = 'none'; return; }
+  badge.textContent = count;
+  badge.style.display = 'inline-block';
+}
+
+async function loadInquiries() {
+  setStatus('inqListStatus', '불러오는 중...', true);
+  let query = supabase.from('inquiries').select('*').order('created_at', { ascending: false });
+  if (inqCurrentStatus !== 'all') query = query.eq('status', inqCurrentStatus);
+  const { data, error } = await query;
+  if (error) { setStatus('inqListStatus', '불러오기 실패: ' + error.message, false); return; }
+  inquiriesCache = data || [];
+  setStatus('inqListStatus', `총 ${inquiriesCache.length}건`, true);
+  renderInquiryTable(inquiriesCache);
+  refreshInquiryBadge();
+}
+
+function formatDateTime(iso) {
+  const d = new Date(iso);
+  return d.toLocaleString('ko-KR', { year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit' });
+}
+
+function renderInquiryTable(items) {
+  const tbody = document.getElementById('inqTableBody');
+  if (!items.length) {
+    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center; padding:32px;">접수된 문의가 없습니다.</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = items.map(i => `
+    <tr data-open="${i.id}" style="cursor:pointer;">
+      <td>${formatDateTime(i.created_at)}</td>
+      <td class="t-title">${escapeHtml(i.name)}</td>
+      <td>${escapeHtml(i.phone)}</td>
+      <td>${escapeHtml(i.email)}</td>
+      <td>${escapeHtml(PROJECT_TYPE_LABEL[i.project_type] || i.project_type)}</td>
+      <td><span class="status-pill ${i.status === 'new' ? 'published' : ''}">${INQUIRY_STATUS_LABEL[i.status] || i.status}</span></td>
+      <td class="row-actions"><button data-open-btn="${i.id}">상세</button></td>
+    </tr>
+  `).join('');
+
+  tbody.querySelectorAll('[data-open], [data-open-btn]').forEach(el => {
+    el.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const id = el.dataset.open || el.dataset.openBtn;
+      openInquiryModal(inquiriesCache.find(i => i.id === id));
+    });
+  });
+}
+
+function openInquiryModal(item) {
+  if (!item) return;
+  currentInquiry = item;
+  document.getElementById('inquiryModalBody').innerHTML = `
+    <div class="inquiry-detail-row"><span>접수일</span><span>${formatDateTime(item.created_at)}</span></div>
+    <div class="inquiry-detail-row"><span>이름</span><span>${escapeHtml(item.name)}</span></div>
+    <div class="inquiry-detail-row"><span>연락처</span><span>${escapeHtml(item.phone)}</span></div>
+    <div class="inquiry-detail-row"><span>이메일</span><span>${escapeHtml(item.email)}</span></div>
+    <div class="inquiry-detail-row"><span>유형</span><span>${escapeHtml(PROJECT_TYPE_LABEL[item.project_type] || item.project_type)}</span></div>
+    <div class="inquiry-detail-row"><span>예산</span><span>${escapeHtml(item.budget || '미입력')}</span></div>
+    <div class="inquiry-detail-message">${escapeHtml(item.message)}</div>
+  `;
+  document.getElementById('inquiryStatusSelect').value = item.status;
+  document.getElementById('inquiryModal').classList.add('is-open');
+}
+
+function closeInquiryModal() {
+  document.getElementById('inquiryModal').classList.remove('is-open');
+  currentInquiry = null;
+}
+
+function initInquiriesPanel() {
+  loadInquiries();
+
+  document.getElementById('inqFilterStatus').addEventListener('change', (e) => {
+    inqCurrentStatus = e.target.value;
+    loadInquiries();
+  });
+
+  document.getElementById('inquiryModalClose').addEventListener('click', closeInquiryModal);
+  document.getElementById('inquiryModal').addEventListener('click', (e) => { if (e.target.id === 'inquiryModal') closeInquiryModal(); });
+
+  document.getElementById('inquiryStatusSelect').addEventListener('change', async (e) => {
+    if (!currentInquiry) return;
+    const { error } = await supabase.from('inquiries').update({ status: e.target.value }).eq('id', currentInquiry.id);
+    if (error) { toast('상태 변경 실패: ' + error.message, true); return; }
+    toast('상태가 변경되었습니다.');
+    loadInquiries();
+  });
+
+  document.getElementById('deleteInquiryBtn').addEventListener('click', async () => {
+    if (!currentInquiry) return;
+    if (!confirm('이 문의를 삭제하시겠습니까?')) return;
+    const { error } = await supabase.from('inquiries').delete().eq('id', currentInquiry.id);
+    if (error) { toast('삭제 실패: ' + error.message, true); return; }
+    toast('삭제되었습니다.');
+    closeInquiryModal();
+    loadInquiries();
+  });
+}
+
+/* ---------------------------------------------------------------------------
+   방문자 분석 (ANALYTICS) 패널
+--------------------------------------------------------------------------- */
+const ANALYTICS_DAYS = 30;
+const DEVICE_LABEL = { mobile: '모바일', tablet: '태블릿', desktop: '데스크톱' };
+
+function countBy(rows, keyFn) {
+  const map = new Map();
+  rows.forEach(r => {
+    const key = keyFn(r);
+    if (!key) return;
+    map.set(key, (map.get(key) || 0) + 1);
+  });
+  return [...map.entries()].sort((a, b) => b[1] - a[1]);
+}
+
+function renderStatTile(label, value) {
+  return `<div class="analytics-stat"><div class="stat-label">${label}</div><div class="stat-value">${value}</div></div>`;
+}
+
+function renderCountTable(bodyId, pairs, emptyMsg) {
+  const tbody = document.getElementById(bodyId);
+  if (!pairs.length) {
+    tbody.innerHTML = `<tr><td colspan="2" style="text-align:center; padding:20px; color:var(--text-faint);">${emptyMsg}</td></tr>`;
+    return;
+  }
+  tbody.innerHTML = pairs.slice(0, 8).map(([label, count]) => `
+    <tr><td>${escapeHtml(label)}</td><td>${count}</td></tr>
+  `).join('');
+}
+
+let dailyChart = null;
+let deviceChart = null;
+
+function renderDailyChart(rows) {
+  const days = [];
+  const today = new Date();
+  for (let i = ANALYTICS_DAYS - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setDate(d.getDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
+  const counts = Object.fromEntries(days.map(d => [d, 0]));
+  rows.forEach(r => {
+    const day = r.created_at.slice(0, 10);
+    if (day in counts) counts[day]++;
+  });
+
+  const ctx = document.getElementById('chartDaily');
+  if (dailyChart) dailyChart.destroy();
+  dailyChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: days.map(d => d.slice(5)),
+      datasets: [{
+        label: '방문수',
+        data: days.map(d => counts[d]),
+        borderColor: '#c9a961',
+        backgroundColor: 'rgba(201,169,97,.15)',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 0,
+      }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { display: false } },
+      scales: {
+        x: { ticks: { color: '#8a8578', maxTicksLimit: 10 }, grid: { display: false } },
+        y: { ticks: { color: '#8a8578', precision: 0 }, grid: { color: 'rgba(255,255,255,.06)' } },
+      },
+    },
+  });
+}
+
+function renderDeviceChart(rows) {
+  const pairs = countBy(rows, r => DEVICE_LABEL[r.device] || r.device || '기타');
+  const ctx = document.getElementById('chartDevice');
+  if (deviceChart) deviceChart.destroy();
+  deviceChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+      labels: pairs.map(p => p[0]),
+      datasets: [{ data: pairs.map(p => p[1]), backgroundColor: ['#c9a961', '#8a8578', '#5c5850', '#e0685c'] }],
+    },
+    options: {
+      responsive: true, maintainAspectRatio: false,
+      plugins: { legend: { position: 'bottom', labels: { color: '#e8e4d9' } } },
+    },
+  });
+}
+
+async function initAnalyticsPanel() {
+  const since = new Date(Date.now() - ANALYTICS_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase.from('page_views').select('*').gte('created_at', since);
+  if (error) {
+    document.getElementById('analyticsStats').innerHTML = `<p class="text-muted">데이터를 불러오지 못했습니다: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+  const rows = data || [];
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+
+  const uniqueSessions = new Set(rows.map(r => r.session_id)).size;
+  const todayViews = rows.filter(r => r.created_at.slice(0, 10) === todayStr).length;
+  const weekViews = rows.filter(r => r.created_at >= weekAgo).length;
+
+  document.getElementById('analyticsStats').innerHTML = [
+    renderStatTile('최근 30일 총 방문', rows.length),
+    renderStatTile('순 방문자 수', uniqueSessions),
+    renderStatTile('오늘 방문', todayViews),
+    renderStatTile('이번주 방문', weekViews),
+  ].join('');
+
+  renderDailyChart(rows);
+  renderDeviceChart(rows);
+
+  renderCountTable('topPagesBody', countBy(rows, r => r.path), '데이터가 없습니다.');
+  renderCountTable('topReferrersBody', countBy(rows, r => r.referrer_host || '직접 방문 / 알 수 없음'), '데이터가 없습니다.');
+  renderCountTable('topKeywordsBody', countBy(rows, r => r.search_keyword), '검색 유입 키워드가 없습니다.');
+}
+
+/* ---------------------------------------------------------------------------
    사이드바 네비게이션
 --------------------------------------------------------------------------- */
 function initNav() {
@@ -667,6 +904,8 @@ async function init() {
     initContactPanel(),
   ]);
   await initPortfolioPanel();
+  initInquiriesPanel();
+  initAnalyticsPanel();
 }
 
 init();

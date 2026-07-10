@@ -69,6 +69,17 @@ export const DEFAULT_CONTENT = {
     business_number: '000-00-00000',
     ceo_name: '000',
     map_note: '지도 영역 (Google Maps 연동 예정)',
+    privacy_policy: `1. 수집 항목
+이름(담당자명), 연락처, 이메일, 프로젝트 유형, 예상 예산(선택), 문의 내용
+
+2. 수집 목적
+견적 상담 및 프로젝트 문의 응대, 상담 이력 관리
+
+3. 보유 및 이용 기간
+문의 처리 완료 후 6개월간 보관하며, 보관 기간 경과 시 지체 없이 파기합니다. 단, 관계 법령에 따라 보존이 필요한 경우 해당 기간 동안 보관합니다.
+
+4. 동의 거부 권리 및 불이익 안내
+귀하는 개인정보 수집·이용에 대한 동의를 거부할 권리가 있습니다. 다만, 동의하지 않으실 경우 견적 문의 접수 및 상담 진행이 제한될 수 있습니다.`,
   },
 };
 
@@ -188,5 +199,12 @@ export async function fetchPortfolioItem(id) {
     console.error('[content] fetchPortfolioItem failed:', err);
     return null;
   }
+}
+
+export async function submitInquiry(payload) {
+  const supabase = await getSupabase();
+  if (!supabase) throw new Error('문의 시스템에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');
+  const { error } = await supabase.from('inquiries').insert(payload);
+  if (error) throw error;
 }
 
