@@ -32,7 +32,7 @@ function initPrivacyModal(privacyText) {
 }
 
 function notifyTelegram(data) {
-  fetch('/.netlify/functions/notify-telegram', {
+  fetch('/notify-telegram', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(data),

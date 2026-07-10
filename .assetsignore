@@ -1,0 +1,13 @@
+.git/
+.claude/
+.netlify/
+.wrangler/
+netlify/
+supabase/
+worker/
+node_modules/
+.gitignore
+.assetsignore
+netlify.toml
+wrangler.toml
+SETUP.md

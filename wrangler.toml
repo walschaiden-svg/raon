@@ -1,0 +1,7 @@
+name = "raon"
+compatibility_date = "2025-03-01"
+main = "worker/index.js"
+
+[assets]
+directory = "./"
+binding = "ASSETS"
