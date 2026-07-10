@@ -672,25 +672,16 @@ function renderFeaturedGrid(items) {
   const container = document.getElementById('featuredGridStack');
   const emptyMsg = document.getElementById('featuredEmptyMsg');
 
-  if (featuredGrid) { featuredGrid.destroy(false); featuredGrid = null; }
+  if (featuredGrid) { featuredGrid.destroy(true); featuredGrid = null; }
+  container.innerHTML = '';
 
   if (!items.length) {
-    container.innerHTML = '';
     container.style.display = 'none';
     emptyMsg.style.display = 'block';
     return;
   }
   container.style.display = '';
   emptyMsg.style.display = 'none';
-
-  container.innerHTML = items.map(item => `
-    <div class="grid-stack-item" gs-id="${escapeAttr(item.id)}" gs-x="${item.featured_x}" gs-y="${item.featured_y}" gs-w="${item.featured_w}" gs-h="${item.featured_h}">
-      <div class="grid-stack-item-content">
-        <img src="${item.cover_image_url || ''}" alt="">
-        <span class="ft-title">${escapeHtml(item.title)}</span>
-      </div>
-    </div>
-  `).join('');
 
   featuredGrid = GridStack.init({
     column: FEATURED_COLUMNS,
@@ -699,6 +690,12 @@ function renderFeaturedGrid(items) {
     float: false,
     animate: true,
   }, container);
+
+  featuredGrid.load(items.map(item => ({
+    id: item.id,
+    x: item.featured_x, y: item.featured_y, w: item.featured_w, h: item.featured_h,
+    content: `<img src="${item.cover_image_url || ''}" alt=""><span class="ft-title">${escapeHtml(item.title)}</span>`,
+  })));
 }
 
 function initFeaturedPanel() {
