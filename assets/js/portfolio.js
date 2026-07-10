@@ -1,10 +1,12 @@
-import { fetchPortfolio, fetchPortfolioItem, fetchPortfolioFilters, fetchCategories } from './content.js';
+import { fetchPortfolio, fetchPortfolioItem, fetchPortfolioFilters, fetchCategories, fetchPortfolioIds } from './content.js';
 import { initFooter } from './footer.js';
 import { parseYoutubeId, youtubeThumbnail, youtubeEmbedUrl } from './youtube.js';
 
 const state = { category: 'all', region: 'all', scale: 'all', page: 1 };
 const itemCache = new Map();
 let categoryLabelMap = {};
+let navIds = []; // ids of every item matching the current filters, in display order (spans all pages)
+let currentDetailId = null;
 
 function renderGrid(items) {
   const grid = document.getElementById('galleryGrid');
@@ -64,7 +66,10 @@ function renderPagination({ page, totalPages }) {
 }
 
 async function load() {
-  const result = await fetchPortfolio(state);
+  const [result] = await Promise.all([
+    fetchPortfolio(state),
+    fetchPortfolioIds(state).then(ids => { navIds = ids; }),
+  ]);
   result.items.forEach(item => itemCache.set(String(item.id), item));
   document.getElementById('resultCount').textContent = `총 ${result.total}개의 프로젝트`;
   renderGrid(result.items);
@@ -152,8 +157,16 @@ function openDetailFrom(tileEl) {
 
   const thumbImg = tileEl.querySelector('img');
   thumbImg.style.viewTransitionName = VT_DETAIL_IMG;
-  const transition = document.startViewTransition(() => openDetail(id));
-  transition.finished.finally(() => { thumbImg.style.viewTransitionName = ''; });
+  document.startViewTransition(async () => {
+    await openDetail(id);
+    // The grid thumbnail and the new modal image briefly both exist in the
+    // live DOM once openDetail() finishes. Both carrying the same
+    // view-transition-name at that point violates the API's uniqueness
+    // rule and silently cancels the whole transition — clear the old one
+    // now so only the modal image holds the name when the "new" state is
+    // captured (right as this callback's promise resolves).
+    thumbImg.style.viewTransitionName = '';
+  });
 }
 
 async function openDetail(id) {
@@ -213,9 +226,26 @@ async function openDetail(id) {
   modal.classList.add('is-open');
   document.body.style.overflow = 'hidden';
 
+  currentDetailId = String(id);
+  updateNavArrows();
+
   const url = new URL(window.location);
   url.searchParams.set('item', id);
   window.history.replaceState({}, '', url);
+}
+
+function updateNavArrows() {
+  const idx = navIds.indexOf(currentDetailId);
+  document.getElementById('pfPrevBtn').disabled = idx <= 0;
+  document.getElementById('pfNextBtn').disabled = idx === -1 || idx >= navIds.length - 1;
+}
+
+function navigateDetail(delta) {
+  const idx = navIds.indexOf(currentDetailId);
+  if (idx === -1) return;
+  const nextIdx = idx + delta;
+  if (nextIdx < 0 || nextIdx >= navIds.length) return;
+  openDetail(navIds[nextIdx]);
 }
 
 function closeDetail() {
@@ -243,14 +273,24 @@ function initModal() {
   document.getElementById('pfModal').addEventListener('click', (e) => {
     if (e.target.id === 'pfModal') closeDetail();
   });
+  document.getElementById('pfPrevBtn').addEventListener('click', () => navigateDetail(-1));
+  document.getElementById('pfNextBtn').addEventListener('click', () => navigateDetail(1));
   document.getElementById('pfLightboxClose').addEventListener('click', closeLightbox);
   document.getElementById('pfLightbox').addEventListener('click', (e) => {
     if (e.target.id === 'pfLightbox') closeLightbox();
   });
   document.addEventListener('keydown', (e) => {
-    if (e.key !== 'Escape') return;
-    if (document.getElementById('pfLightbox').classList.contains('is-open')) closeLightbox();
-    else closeDetail();
+    const lightboxOpen = document.getElementById('pfLightbox').classList.contains('is-open');
+    const modalOpen = document.getElementById('pfModal').classList.contains('is-open');
+
+    if (e.key === 'Escape') {
+      if (lightboxOpen) closeLightbox();
+      else if (modalOpen) closeDetail();
+      return;
+    }
+    if (!modalOpen || lightboxOpen) return;
+    if (e.key === 'ArrowLeft') navigateDetail(-1);
+    if (e.key === 'ArrowRight') navigateDetail(1);
   });
 }
 

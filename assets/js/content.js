@@ -188,6 +188,28 @@ export async function fetchCategories() {
   }
 }
 
+export async function fetchPortfolioIds({ category = 'all', region = 'all', scale = 'all' } = {}) {
+  const supabase = await getSupabase();
+  if (!supabase) {
+    const items = filterFallback({ category, region, scale });
+    return items.map(i => String(i.id));
+  }
+  try {
+    let query = supabase.from('portfolio_items').select('id').eq('published', true);
+    if (category !== 'all') query = query.eq('category', category);
+    if (region !== 'all') query = query.eq('region', region);
+    if (scale !== 'all') query = query.eq('scale', scale);
+    query = query.order('sort_order', { ascending: true }).order('created_at', { ascending: false });
+    const { data, error } = await query;
+    if (error) throw error;
+    return (data || []).map(i => String(i.id));
+  } catch (err) {
+    console.error('[content] fetchPortfolioIds failed:', err);
+    const items = filterFallback({ category, region, scale });
+    return items.map(i => String(i.id));
+  }
+}
+
 export async function fetchPortfolioItem(id) {
   const supabase = await getSupabase();
   if (!supabase) return FALLBACK_PORTFOLIO.find(i => i.id === id) || null;
