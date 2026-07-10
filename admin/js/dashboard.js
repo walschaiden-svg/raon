@@ -637,6 +637,7 @@ async function initPortfolioPanel() {
 --------------------------------------------------------------------------- */
 const FEATURED_COLUMNS = 6;
 let featuredGrid = null;
+let featuredItemsCache = [];
 
 async function loadFeaturedItems() {
   const { data, error } = await supabase.from('portfolio_items')
@@ -645,7 +646,26 @@ async function loadFeaturedItems() {
     .order('featured_y', { ascending: true })
     .order('featured_x', { ascending: true });
   if (error) { toast('대표 프로젝트 불러오기 실패: ' + error.message, true); return; }
-  renderFeaturedGrid(data || []);
+  featuredItemsCache = assignDefaultFeaturedPositions(data || []);
+  if (document.getElementById('panel-featured').classList.contains('active')) {
+    renderFeaturedGrid(featuredItemsCache);
+  }
+}
+
+/* 새로 지정된 항목은 모두 (0,0)이 기본값이라 서로 겹치므로, 아직 한 번도
+   배치되지 않은(=여전히 기본값 0,0인) 항목들을 순서대로 자동 배치해 겹침을 방지합니다. */
+function assignDefaultFeaturedPositions(items) {
+  let x = 0;
+  let y = 0;
+  return items.map(item => {
+    if (item.featured_x !== 0 || item.featured_y !== 0) return item;
+    const w = item.featured_w || 2;
+    const h = item.featured_h || 2;
+    if (x + w > FEATURED_COLUMNS) { x = 0; y += h; }
+    const positioned = { ...item, featured_x: x, featured_y: y };
+    x += w;
+    return positioned;
+  });
 }
 
 function renderFeaturedGrid(items) {
@@ -915,14 +935,9 @@ function renderDeviceChart(rows) {
   });
 }
 
-async function initAnalyticsPanel() {
-  const since = new Date(Date.now() - ANALYTICS_DAYS * 24 * 60 * 60 * 1000).toISOString();
-  const { data, error } = await supabase.from('page_views').select('*').gte('created_at', since);
-  if (error) {
-    document.getElementById('analyticsStats').innerHTML = `<p class="text-muted">데이터를 불러오지 못했습니다: ${escapeHtml(error.message)}</p>`;
-    return;
-  }
-  const rows = data || [];
+let analyticsRowsCache = null;
+
+function renderAnalyticsAll(rows) {
   const todayStr = new Date().toISOString().slice(0, 10);
   const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
 
@@ -945,6 +960,19 @@ async function initAnalyticsPanel() {
   renderCountTable('topKeywordsBody', countBy(rows, r => r.search_keyword), '검색 유입 키워드가 없습니다.');
 }
 
+async function initAnalyticsPanel() {
+  const since = new Date(Date.now() - ANALYTICS_DAYS * 24 * 60 * 60 * 1000).toISOString();
+  const { data, error } = await supabase.from('page_views').select('*').gte('created_at', since);
+  if (error) {
+    document.getElementById('analyticsStats').innerHTML = `<p class="text-muted">데이터를 불러오지 못했습니다: ${escapeHtml(error.message)}</p>`;
+    return;
+  }
+  analyticsRowsCache = data || [];
+  if (document.getElementById('panel-analytics').classList.contains('active')) {
+    renderAnalyticsAll(analyticsRowsCache);
+  }
+}
+
 /* ---------------------------------------------------------------------------
    사이드바 네비게이션
 --------------------------------------------------------------------------- */
@@ -958,6 +986,11 @@ function initNav() {
       document.querySelectorAll('.admin-panel').forEach(p => p.classList.remove('active'));
       document.getElementById('panel-' + link.dataset.panel).classList.add('active');
       window.location.hash = link.dataset.panel;
+
+      // Gridstack/Chart.js compute sizes from the DOM, so they must only
+      // render once their panel is actually visible (not display:none).
+      if (link.dataset.panel === 'featured') renderFeaturedGrid(featuredItemsCache);
+      if (link.dataset.panel === 'analytics' && analyticsRowsCache) renderAnalyticsAll(analyticsRowsCache);
     });
   });
   const initialPanel = window.location.hash.replace('#', '');
