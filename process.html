@@ -38,10 +38,17 @@
 <section class="page-hero">
   <span class="bg-num">PROCESS</span>
   <div class="container">
-    <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><span class="gold">Process</span></div>
-    <span class="eyebrow">HOW WE WORK</span>
-    <h1>다섯 단계로 완성하는<br>정밀한 축소판</h1>
-    <p class="lead">설계 도면 검토부터 최종 납품까지, 라온디자인스튜디오는 체계적인 공정 관리로 오차 없는 결과물을 만듭니다.</p>
+    <div class="page-hero-row">
+      <div class="page-hero-text">
+        <div class="breadcrumb"><a href="index.html">Home</a><span>/</span><span class="gold">Process</span></div>
+        <span class="eyebrow">HOW WE WORK</span>
+        <h1>다섯 단계로 완성하는<br>정밀한 축소판</h1>
+        <p class="lead">설계 도면 검토부터 최종 납품까지, 라온디자인스튜디오는 체계적인 공정 관리로 오차 없는 결과물을 만듭니다.</p>
+      </div>
+      <button type="button" class="video-board-btn" id="openVideoBoardBtn">
+        <span class="vb-btn-icon">▶</span>제작과정 영상으로 보기
+      </button>
+    </div>
   </div>
 </section>
 
@@ -50,6 +57,18 @@
     <div class="process-steps" id="processSteps"></div>
   </div>
 </section>
+
+<div class="video-board-modal" id="videoBoardModal">
+  <div class="vb-modal-panel">
+    <div class="vb-modal-head">
+      <h3>제작과정 영상 게시판</h3>
+      <button type="button" class="vb-modal-close" id="videoBoardClose">&times;</button>
+    </div>
+    <div class="vb-modal-body">
+      <div class="video-board-grid" id="videoBoardGrid"></div>
+    </div>
+  </div>
+</div>
 
 <section class="cta-banner">
   <div class="container reveal">

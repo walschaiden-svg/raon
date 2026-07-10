@@ -58,6 +58,7 @@ export const DEFAULT_CONTENT = {
       { num: '04', title: '마감 & 조경·조명 연출', desc: '조경, 인물, 차량 등의 디테일 요소를 배치하고 LED 조명을 설치하여 주간·야간 연출을 완성합니다. 실제 건축물과 같은 생동감을 부여하는 단계입니다.', tags: ['조경 식재', 'LED 조명', '디테일 마감'], image_url: 'assets/images/hero-night-building.jpeg' },
       { num: '05', title: '검수 & 안전 납품', desc: '전 부재 최종 검수 후 전용 보호 케이스로 포장하여 현장까지 안전하게 운송·설치합니다. 입찰·프레젠테이션 일정에 맞춘 정확한 납기를 약속합니다.', tags: ['최종 검수', '안전 포장', '현장 설치'], image_url: 'assets/images/daylight-house.png' },
     ],
+    showcase_videos: [],
   },
   contact: {
     address: '서울특별시 (주소 추후 확정)',

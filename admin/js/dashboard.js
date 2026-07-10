@@ -332,18 +332,30 @@ const STEP_FIELDS = [
   { key: 'tags', label: '태그', type: 'tags' },
   { key: 'image_url', label: '이미지', type: 'image' },
 ];
+const VIDEO_FIELDS = [
+  { key: 'title', label: '제목' },
+  { key: 'youtube_url', label: '유튜브 URL (일반 영상 또는 /shorts/ 링크)' },
+];
 
 async function initProcessPanel() {
   const process = await loadContent('process');
   const stepsList = document.getElementById('stepsList');
+  const videosList = document.getElementById('videosList');
   renderRepeatList(stepsList, process.steps || [], STEP_FIELDS);
+  renderRepeatList(videosList, process.showcase_videos || [], VIDEO_FIELDS);
 
   document.getElementById('addStep').addEventListener('click', () => {
     addItem(stepsList, STEP_FIELDS, { num: '', title: '', desc: '', tags: [], image_url: '' });
   });
+  document.getElementById('addVideo').addEventListener('click', () => {
+    addItem(videosList, VIDEO_FIELDS, { title: '', youtube_url: '' });
+  });
 
   document.getElementById('saveProcess').addEventListener('click', async () => {
-    const data = { steps: syncList(stepsList, STEP_FIELDS) };
+    const data = {
+      steps: syncList(stepsList, STEP_FIELDS),
+      showcase_videos: syncList(videosList, VIDEO_FIELDS),
+    };
     try {
       await saveContent('process', data);
       setStatus('processSaveStatus', '저장되었습니다.', true);

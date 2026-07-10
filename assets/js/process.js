@@ -1,5 +1,6 @@
 import { fetchPageContent } from './content.js';
 import { initFooter } from './footer.js';
+import { parseYoutubeId, youtubeThumbnail, youtubeEmbedUrl } from './youtube.js';
 
 function renderSteps(steps) {
   document.getElementById('processSteps').innerHTML = (steps || []).map(s => `
@@ -15,12 +16,60 @@ function renderSteps(steps) {
   `).join('');
 }
 
+function renderVideoBoard(videos) {
+  const btn = document.getElementById('openVideoBoardBtn');
+  const items = (videos || [])
+    .map(v => ({ title: v.title, id: parseYoutubeId(v.youtube_url), isShort: /\/shorts\//.test(v.youtube_url || '') }))
+    .filter(v => v.id);
+
+  if (!items.length) { btn.style.display = 'none'; return; }
+
+  document.getElementById('videoBoardGrid').innerHTML = items.map((v, i) => `
+    <div class="vb-card" data-index="${i}">
+      <div class="vb-thumb-wrap ${v.isShort ? 'is-short' : ''}">
+        <img src="${youtubeThumbnail(v.id)}" alt="${v.title}" loading="lazy">
+        <span class="vb-play">▶</span>
+      </div>
+      <div class="vb-title">${v.title}</div>
+    </div>
+  `).join('');
+
+  document.querySelectorAll('.vb-card').forEach(card => {
+    card.addEventListener('click', () => {
+      if (card.classList.contains('is-playing')) return;
+      card.classList.add('is-playing');
+      const video = items[Number(card.dataset.index)];
+      card.querySelector('.vb-thumb-wrap').innerHTML =
+        `<iframe src="${youtubeEmbedUrl(video.id)}" title="${video.title}" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+    }, { once: true });
+  });
+}
+
+function initVideoBoard() {
+  const modal = document.getElementById('videoBoardModal');
+  document.getElementById('openVideoBoardBtn').addEventListener('click', () => {
+    modal.classList.add('is-open');
+    document.body.style.overflow = 'hidden';
+  });
+  const close = () => {
+    modal.classList.remove('is-open');
+    document.body.style.overflow = '';
+  };
+  document.getElementById('videoBoardClose').addEventListener('click', close);
+  modal.addEventListener('click', (e) => { if (e.target === modal) close(); });
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && modal.classList.contains('is-open')) close();
+  });
+}
+
 async function init() {
   const [process] = await Promise.all([
     fetchPageContent('process'),
     initFooter(),
   ]);
   renderSteps(process.steps);
+  renderVideoBoard(process.showcase_videos);
+  initVideoBoard();
   if (window.RAON && window.RAON.initReveal) window.RAON.initReveal();
 }
 
