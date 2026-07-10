@@ -315,8 +315,8 @@ section{ position: relative; }
 .work-grid-custom{
   display: grid;
   grid-template-columns: repeat(6, 1fr);
-  grid-auto-rows: minmax(70px, 8vw);
-  gap: 14px;
+  grid-auto-rows: minmax(70px, 8vw); /* fallback before JS measures square row height */
+  gap: 16px; /* matches admin Gridstack margin:8 (8px inset each side = 16px visual gap) */
 }
 .work-grid-custom .work-card{ aspect-ratio: auto; }
 @media (max-width: 760px){

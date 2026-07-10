@@ -690,7 +690,7 @@ function renderFeaturedGrid(items) {
 
   featuredGrid = GridStack.init({
     column: FEATURED_COLUMNS,
-    cellHeight: 90,
+    cellHeight: 'auto', // square cells (row height = column width) so the shape drawn here matches the homepage exactly
     margin: 8,
     float: false,
     animate: true,

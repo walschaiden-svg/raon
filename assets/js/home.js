@@ -41,6 +41,20 @@ function workCardHtml(p) {
   `;
 }
 
+const FEATURED_COLUMNS = 6;
+const FEATURED_GAP = 16; // matches admin Gridstack margin:8 (8px inset on each side = 16px visual gap)
+
+// Keeps grid cells square (row height = column width), matching the admin
+// Gridstack editor's cellHeight:'auto' — otherwise the same x/y/w/h would
+// draw a different shape here than what was arranged in the admin.
+function syncFeaturedGridRowHeight() {
+  const grid = document.getElementById('featuredWorkGrid');
+  if (!grid.classList.contains('work-grid-custom')) return;
+  if (window.innerWidth <= 760) { grid.style.gridAutoRows = ''; return; }
+  const cellWidth = (grid.clientWidth - FEATURED_GAP * (FEATURED_COLUMNS - 1)) / FEATURED_COLUMNS;
+  grid.style.gridAutoRows = `${Math.round(cellWidth)}px`;
+}
+
 function renderFeaturedWork(featuredItems, fallbackItems) {
   const grid = document.getElementById('featuredWorkGrid');
 
@@ -53,6 +67,7 @@ function renderFeaturedWork(featuredItems, fallbackItems) {
         <div class="overlay"><div><span class="tag">${categoryLabelMap[p.category] || ''}</span><h3>${p.title}</h3></div></div>
       </a>
     `).join('');
+    syncFeaturedGridRowHeight();
     return;
   }
 
@@ -77,6 +92,12 @@ async function init() {
   renderHero(home);
   renderStrengths(home.strengths || []);
   renderFeaturedWork(featured, portfolio.items);
+
+  let resizeTimer;
+  window.addEventListener('resize', () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(syncFeaturedGridRowHeight, 150);
+  });
 
   if (window.RAON && window.RAON.initReveal) window.RAON.initReveal();
 }
