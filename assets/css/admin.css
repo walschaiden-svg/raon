@@ -145,12 +145,12 @@ body.admin-body{
 
 /* ---------- Featured projects grid editor (Gridstack) ---------- */
 .grid-stack{ background: var(--bg-elevated); border: 1px solid var(--border); }
-/* NOTE: do not set position/display on .grid-stack-item-content — Gridstack's
-   own stylesheet makes it position:absolute + inset:0 to fill the tile
-   (that's how tiles get their width/height at all). Overriding it here
-   previously collapsed every tile to the width of its title text. */
+/* Gridstack's own stylesheet only sets position:absolute; width:auto on
+   .grid-stack-item-content — it deliberately leaves inset up to us. Without
+   it the box has nothing forcing it to fill the tile, so it shrinks to fit
+   its content (the title text), which is why tiles looked like hairlines. */
 .grid-stack .grid-stack-item-content{
-  background: #000; overflow: hidden; border: 1px solid var(--border-strong); cursor: grab;
+  inset: 0; background: #000; overflow: hidden; border: 1px solid var(--border-strong); cursor: grab;
 }
 .grid-stack .grid-stack-item-content img{
   position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: .55;
