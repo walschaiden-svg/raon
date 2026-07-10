@@ -310,21 +310,40 @@ p.lead{ font-size: 1.1rem; color: var(--text-muted); }
 
 .video-board-grid{ column-count: 3; column-gap: 20px; }
 .vb-card{ break-inside: avoid; margin-bottom: 20px; cursor: pointer; }
-.vb-card.is-playing{ column-span: all; cursor: default; margin-bottom: 28px; }
-.vb-card.is-playing .vb-thumb-wrap{ max-width: 780px; margin: 0 auto; }
-.vb-card.is-playing .vb-thumb-wrap.is-short{ max-width: 400px; }
-.vb-card.is-playing .vb-title{ text-align: center; margin-top: 12px; }
 .vb-thumb-wrap{ position: relative; width: 100%; aspect-ratio: 16 / 9; overflow: hidden; background: #000; }
 .vb-thumb-wrap.is-short{ aspect-ratio: 9 / 16; }
 .vb-thumb-wrap img{ width: 100%; height: 100%; object-fit: cover; transition: transform .3s; }
 .vb-card:hover .vb-thumb-wrap img{ transform: scale(1.04); }
-.vb-thumb-wrap iframe{ position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .vb-play{
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   background: rgba(0,0,0,.28); color: #fff; font-size: 15px; transition: background .25s;
 }
 .vb-card:hover .vb-play{ background: rgba(0,0,0,.48); }
 .vb-title{ margin-top: 9px; font-size: .85rem; color: var(--text-muted); line-height: 1.4; }
+
+/* 재생 라이트박스 — 게시판 그리드는 건드리지 않고 그 위에 확대 재생만 띄웠다가 닫으면 원래 배치 그대로 복귀 */
+.vb-player-lightbox{
+  position: fixed; inset: 0; z-index: 300;
+  background: rgba(6,6,6,.96);
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; visibility: hidden; transition: opacity .3s;
+  padding: 40px;
+}
+.vb-player-lightbox.is-open{ opacity: 1; visibility: visible; }
+.vb-player-frame{ position: relative; width: 100%; max-width: 900px; aspect-ratio: 16 / 9; background: #000; }
+.vb-player-frame.is-short{ max-width: 420px; aspect-ratio: 9 / 16; }
+.vb-player-frame iframe{ position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
+.vb-player-close{
+  position: absolute; top: 30px; right: 40px; width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid var(--border-strong); background: transparent; color: #fff; font-size: 22px;
+  display: flex; align-items: center; justify-content: center;
+}
+.vb-player-close:hover{ border-color: var(--gold); color: var(--gold); }
+@media (max-width: 600px){
+  .vb-player-lightbox{ padding: 20px; }
+  .vb-player-frame{ max-width: 100%; }
+  .vb-player-frame.is-short{ max-width: 260px; }
+}
 
 @media (max-width: 900px){
   .video-board-grid{ column-count: 2; }
