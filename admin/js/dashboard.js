@@ -796,9 +796,12 @@ function initFeaturedPanel() {
     }, 150);
   });
 
-  document.getElementById('saveFeatured').addEventListener('click', async () => {
+  document.getElementById('saveFeatured').addEventListener('click', async (e) => {
     if (!featuredLayout.length) { toast('저장할 항목이 없습니다.', true); return; }
 
+    const btn = e.currentTarget;
+    btn.disabled = true;
+    btn.textContent = '저장 중...';
     setStatus('featuredSaveStatus', '저장 중...', true);
     try {
       const results = await Promise.all(featuredLayout.map(item =>
@@ -814,6 +817,10 @@ function initFeaturedPanel() {
     } catch (err) {
       setStatus('featuredSaveStatus', '저장 실패: ' + err.message, false);
       toast('저장 실패', true);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = '배치 저장하기';
+      btn.blur();
     }
   });
 }
