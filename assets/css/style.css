@@ -429,8 +429,16 @@ section{ position: relative; }
   transition: opacity .4s, transform .4s;
 }
 .gallery-item.hide{ display: none; }
-.gallery-item img{ width: 100%; height: 100%; object-fit: cover; transition: transform .7s var(--ease); }
+.gallery-item img{ width: 100%; height: 100%; object-fit: cover; transition: transform .9s var(--ease); transform: scale(1.14); }
+.gallery-item.in img{ transform: scale(1); }
 .gallery-item:hover img{ transform: scale(1.08); }
+.gallery-item .g-curtain{
+  position: absolute; inset: 0; z-index: 3; background: var(--bg-soft);
+  transform-origin: right center;
+  transition: transform .95s var(--ease);
+  transition-delay: calc(var(--i, 0) * 90ms);
+}
+.gallery-item.in .g-curtain{ transform: scaleX(0); }
 .gallery-item .g-overlay{
   position: absolute; inset: 0; padding: 24px;
   display: flex; flex-direction: column; justify-content: flex-end;
@@ -606,19 +614,22 @@ section{ position: relative; }
 }
 
 /* ---------- Portfolio detail modal ---------- */
+::view-transition-old(pf-detail-img),
+::view-transition-new(pf-detail-img){ animation-duration: .5s; }
+
 .pf-modal{
   position: fixed; inset: 0; z-index: 200;
   background: rgba(6,6,6,.92);
   display: flex; align-items: center; justify-content: center;
   opacity: 0; visibility: hidden; transition: opacity .35s;
-  padding: 32px;
+  padding: 24px;
 }
 .pf-modal.is-open{ opacity: 1; visibility: visible; }
 .pf-modal-panel{
   background: var(--bg-soft);
   border: 1px solid var(--border-strong);
-  width: 100%; max-width: 1080px; max-height: 88vh;
-  display: grid; grid-template-columns: 1.3fr 1fr;
+  width: 100%; max-width: 1520px; max-height: 92vh;
+  display: grid; grid-template-columns: 1.5fr 1fr;
   overflow: hidden; position: relative;
   transform: translateY(24px); transition: transform .4s var(--ease);
 }

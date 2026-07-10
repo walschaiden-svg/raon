@@ -12,19 +12,25 @@ function renderGrid(items) {
     grid.innerHTML = `<p class="text-muted" style="grid-column:1/-1; text-align:center; padding:60px 0;">해당 조건의 프로젝트가 없습니다.</p>`;
     return;
   }
-  grid.innerHTML = items.map(p => `
-    <div class="gallery-item reveal is-visible" data-id="${p.id}">
+  grid.innerHTML = items.map((p, i) => `
+    <div class="gallery-item" data-id="${p.id}" style="--i:${i}">
       <img src="${p.cover_image_url}" alt="${p.title}">
+      <div class="g-curtain"></div>
       <span class="g-view">자세히 보기</span>
       <div class="g-overlay"><span class="g-cat">${categoryLabelMap[p.category] || ''}</span><span class="g-title">${p.title}</span></div>
     </div>
   `).join('');
 
   grid.querySelectorAll('.gallery-item').forEach(el => {
-    el.addEventListener('click', () => openDetail(el.dataset.id));
+    el.addEventListener('click', () => openDetailFrom(el));
   });
 
-  if (window.RAON && window.RAON.initReveal) window.RAON.initReveal();
+  // mask-curtain reveal: staggered per tile, triggered right away since the
+  // grid is generally already in view when this renders (initial load or
+  // after a filter/pagination change)
+  requestAnimationFrame(() => {
+    grid.querySelectorAll('.gallery-item').forEach(el => el.classList.add('in'));
+  });
 }
 
 function renderPagination({ page, totalPages }) {
@@ -138,6 +144,18 @@ function renderMainSlide(slide, title) {
   return `<div class="main-img"><img src="${slide.src}" alt="${title}" id="pfMainImg"></div>`;
 }
 
+const VT_DETAIL_IMG = 'pf-detail-img';
+
+function openDetailFrom(tileEl) {
+  const id = tileEl.dataset.id;
+  if (!document.startViewTransition) { openDetail(id); return; }
+
+  const thumbImg = tileEl.querySelector('img');
+  thumbImg.style.viewTransitionName = VT_DETAIL_IMG;
+  const transition = document.startViewTransition(() => openDetail(id));
+  transition.finished.finally(() => { thumbImg.style.viewTransitionName = ''; });
+}
+
 async function openDetail(id) {
   let item = itemCache.get(String(id));
   if (!item) item = await fetchPortfolioItem(id);
@@ -168,7 +186,9 @@ async function openDetail(id) {
     ${renderThumbs()}
   `;
   if (slides[0].type === 'image') {
-    document.getElementById('pfModalImages').querySelector('.main-img img').addEventListener('click', () => openLightbox(slides[0].src));
+    const mainImg = document.getElementById('pfModalImages').querySelector('.main-img img');
+    mainImg.style.viewTransitionName = VT_DETAIL_IMG;
+    mainImg.addEventListener('click', () => openLightbox(slides[0].src));
   }
 
   document.querySelectorAll('#pfModalImages .thumb-row div').forEach(thumb => {
