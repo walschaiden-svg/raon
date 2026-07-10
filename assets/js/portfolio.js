@@ -176,38 +176,25 @@ function openDetailFrom(tileEl) {
   });
 }
 
-let thumbScrollRAF = null;
-let thumbScrollPaused = false;
+/* 썸네일이 4개를 넘어가면 좌우 화살표로 한 페이지씩 스크롤합니다. 화살표는
+   그 방향으로 더 볼 사진이 있을 때만 보이고, 끝에 도달하면 자동으로 숨습니다. */
+function initThumbNav(wrap) {
+  if (!wrap) return;
+  const row = wrap.querySelector('.thumb-row');
+  const prevBtn = wrap.querySelector('[data-thumb-nav="prev"]');
+  const nextBtn = wrap.querySelector('[data-thumb-nav="next"]');
+  if (!row || !prevBtn || !nextBtn) return;
 
-/* 썸네일이 4개를 넘어가도 전부 볼 수 있도록 천천히 자동으로 옆으로 흐르게 하고,
-   마우스를 올리면 멈춰서 원하는 사진을 클릭할 수 있게 합니다. 썸네일 수가
-   적어 스크롤할 내용이 없으면 scrollLeft 갱신이 사실상 no-op이라 안전합니다. */
-function startThumbAutoScroll(container) {
-  stopThumbAutoScroll();
-  if (!container) return;
-  thumbScrollPaused = false;
-  container.addEventListener('mouseenter', () => { thumbScrollPaused = true; });
-  container.addEventListener('mouseleave', () => { thumbScrollPaused = false; });
-
-  const step = () => {
-    if (!thumbScrollPaused) {
-      const maxScroll = container.scrollWidth - container.clientWidth;
-      if (maxScroll <= 0) {
-        // nothing to scroll
-      } else if (container.scrollLeft >= maxScroll - 1) {
-        container.scrollLeft = 0;
-      } else {
-        container.scrollLeft += 0.5;
-      }
-    }
-    thumbScrollRAF = requestAnimationFrame(step);
+  const update = () => {
+    const maxScroll = row.scrollWidth - row.clientWidth;
+    prevBtn.classList.toggle('is-hidden', row.scrollLeft <= 1);
+    nextBtn.classList.toggle('is-hidden', row.scrollLeft >= maxScroll - 1);
   };
-  thumbScrollRAF = requestAnimationFrame(step);
-}
 
-function stopThumbAutoScroll() {
-  if (thumbScrollRAF) cancelAnimationFrame(thumbScrollRAF);
-  thumbScrollRAF = null;
+  prevBtn.addEventListener('click', () => row.scrollBy({ left: -row.clientWidth * 0.8, behavior: 'smooth' }));
+  nextBtn.addEventListener('click', () => row.scrollBy({ left: row.clientWidth * 0.8, behavior: 'smooth' }));
+  row.addEventListener('scroll', update);
+  update();
 }
 
 async function openDetail(id) {
@@ -217,11 +204,15 @@ async function openDetail(id) {
 
   const slides = buildMediaSlides(item);
 
-  const renderThumbs = () => slides.length > 1 ? `<div class="thumb-row">
-    ${slides.map((s, i) => `<div class="${i === 0 ? 'active' : ''}" data-index="${i}">
-      <img src="${s.type === 'video' ? s.thumb : s.src}" alt="${item.title}">
-      ${s.type === 'video' ? '<span class="thumb-play">▶</span>' : ''}
-    </div>`).join('')}
+  const renderThumbs = () => slides.length > 1 ? `<div class="thumb-row-wrap">
+    <button type="button" class="thumb-nav prev is-hidden" data-thumb-nav="prev" aria-label="이전 사진">‹</button>
+    <div class="thumb-row">
+      ${slides.map((s, i) => `<div class="${i === 0 ? 'active' : ''}" data-index="${i}">
+        <img src="${s.type === 'video' ? s.thumb : s.src}" alt="${item.title}">
+        ${s.type === 'video' ? '<span class="thumb-play">▶</span>' : ''}
+      </div>`).join('')}
+    </div>
+    <button type="button" class="thumb-nav next is-hidden" data-thumb-nav="next" aria-label="다음 사진">›</button>
   </div>` : '';
 
   const setMain = (index) => {
@@ -248,7 +239,7 @@ async function openDetail(id) {
   document.querySelectorAll('#pfModalImages .thumb-row div').forEach(thumb => {
     thumb.addEventListener('click', () => setMain(Number(thumb.dataset.index)));
   });
-  startThumbAutoScroll(document.querySelector('#pfModalImages .thumb-row'));
+  initThumbNav(document.querySelector('#pfModalImages .thumb-row-wrap'));
 
   document.getElementById('pfModalInfo').innerHTML = `
     <span class="pf-type">${categoryLabelMap[item.category] || ''}</span>
@@ -291,7 +282,6 @@ function navigateDetail(delta) {
 }
 
 function closeDetail() {
-  stopThumbAutoScroll();
   document.getElementById('pfModal').classList.remove('is-open');
   document.getElementById('pfModalImages').innerHTML = '';
   document.body.style.overflow = '';

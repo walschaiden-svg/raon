@@ -751,8 +751,9 @@ section{ position: relative; }
 .pf-modal-images .main-img.main-video::after{ content: none; }
 .pf-modal-images .main-video{ background: #000; }
 .pf-modal-images .main-video iframe{ width: 100%; height: 100%; border: 0; }
+.pf-modal-images .thumb-row-wrap{ position: relative; }
 .pf-modal-images .thumb-row{
-  display: flex; gap: 10px; overflow-x: auto; scroll-behavior: auto;
+  display: flex; gap: 10px; overflow-x: auto; scroll-behavior: smooth;
   scrollbar-width: none; -ms-overflow-style: none;
 }
 .pf-modal-images .thumb-row::-webkit-scrollbar{ display: none; }
@@ -763,6 +764,17 @@ section{ position: relative; }
   position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
   background: rgba(0,0,0,.35); color: #fff; font-size: 16px;
 }
+.pf-modal-images .thumb-nav{
+  position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+  width: 30px; height: 30px; border-radius: 50%; border: none;
+  background: rgba(6,6,6,.72); color: #fff; font-size: 15px; line-height: 1;
+  display: flex; align-items: center; justify-content: center; cursor: pointer;
+  transition: opacity .2s, background .2s;
+}
+.pf-modal-images .thumb-nav:hover{ background: rgba(6,6,6,.9); }
+.pf-modal-images .thumb-nav.prev{ left: -4px; }
+.pf-modal-images .thumb-nav.next{ right: -4px; }
+.pf-modal-images .thumb-nav.is-hidden{ opacity: 0; pointer-events: none; }
 .pf-modal-info{ padding: 44px 40px; overflow-y: auto; border-left: 1px solid var(--border); display: flex; flex-direction: column; }
 .pf-modal-info .pf-type{ font-size: 11px; letter-spacing: .18em; text-transform: uppercase; color: var(--gold); margin-bottom: 12px; }
 .pf-modal-info h3{ font-size: 1.6rem; margin-bottom: 30px; }
