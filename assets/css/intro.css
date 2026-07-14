@@ -1,0 +1,200 @@
+/* ==========================================================================
+   RAON DESIGNSTUDIO — Entrance Intro (blueprint letterform draw -> enter)
+   ========================================================================== */
+
+.intro{
+  --ink: #f4f2ee;
+  --ink-soft: #a8a29b;
+  --paper: #0a0a0a;
+  --paper-line: rgba(244,242,238,0.06);
+  --paper-line-strong: rgba(244,242,238,0.14);
+  position: fixed; inset: 0; z-index: 9999;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--paper);
+  overflow: hidden;
+  transition: opacity .8s var(--ease), visibility .8s var(--ease);
+}
+.intro[hidden]{ display: none; }
+.intro.is-leaving{ opacity: 0; pointer-events: none; }
+
+.intro-grid{
+  position: absolute; inset: 0;
+  background-image:
+    linear-gradient(var(--paper-line-strong) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-line-strong) 1px, transparent 1px),
+    linear-gradient(var(--paper-line) 1px, transparent 1px),
+    linear-gradient(90deg, var(--paper-line) 1px, transparent 1px);
+  background-size: 180px 180px, 180px 180px, 36px 36px, 36px 36px;
+  opacity: 0;
+  animation: introGridIn 1.4s var(--ease) forwards;
+}
+@keyframes introGridIn{ to{ opacity: 1; } }
+
+/* faint ghost floor plan sitting behind everything, like the RAON drawing
+   was laid on top of an existing architectural sheet */
+.intro-ghost{
+  position: absolute; inset: 0; pointer-events: none;
+  display: flex; align-items: center; justify-content: center;
+  opacity: 0; animation: introGhostIn 2.2s var(--ease) .1s forwards;
+}
+.intro-ghost svg{
+  width: min(1400px, 150vw); height: auto; overflow: visible;
+  filter: blur(.5px);
+}
+.intro-ghost path, .intro-ghost circle{
+  fill: none; stroke: var(--ink); stroke-width: 1;
+}
+@keyframes introGhostIn{ to{ opacity: .05; } }
+
+/* ruler strips along the top/left edges, like a CAD canvas */
+.intro-ruler{ position: absolute; opacity: 0; animation: introGridIn 1.4s var(--ease) .2s forwards; }
+.intro-ruler-top{
+  top: 0; left: 0; right: 0; height: 22px;
+  background-image: repeating-linear-gradient(90deg, var(--paper-line-strong) 0 1px, transparent 1px 10px);
+  background-position: 0 100%; background-repeat: repeat-x;
+}
+.intro-ruler-left{
+  top: 0; left: 0; bottom: 0; width: 22px;
+  background-image: repeating-linear-gradient(180deg, var(--paper-line-strong) 0 1px, transparent 1px 10px);
+  background-position: 100% 0; background-repeat: repeat-y;
+}
+
+/* faint drafting-sheet dressing: border, corner brackets, title block — the
+   RAON construction drawing reads as if it's sitting on a real sheet */
+.intro-sheet{
+  position: absolute; inset: 0; pointer-events: none;
+  opacity: 0; animation: introGridIn 1.6s var(--ease) .15s forwards;
+}
+.intro-sheet-frame{ position: absolute; inset: 22px; border: 1px solid rgba(244,242,238,0.05); }
+.intro-corner{
+  position: absolute; width: 20px; height: 20px;
+  border-top: 1px solid rgba(244,242,238,0.22);
+  border-left: 1px solid rgba(244,242,238,0.22);
+}
+.intro-corner-tl{ top: 22px; left: 22px; }
+.intro-corner-tr{ top: 22px; right: 22px; transform: rotate(90deg); }
+.intro-corner-br{ bottom: 22px; right: 22px; transform: rotate(180deg); }
+.intro-corner-bl{ bottom: 22px; left: 22px; transform: rotate(270deg); }
+.intro-titleblock{
+  position: absolute; right: 34px; bottom: 34px;
+  display: flex; flex-direction: column; gap: 4px; align-items: flex-end;
+  padding-top: 8px; border-top: 1px solid rgba(244,242,238,0.12);
+  font-family: var(--sans); font-size: 9px; letter-spacing: .05em;
+  color: rgba(244,242,238,0.26); text-align: right;
+}
+@media (max-width: 640px){
+  .intro-titleblock{ display: none; }
+  .intro-sheet-frame{ inset: 14px; }
+  .intro-corner-tl{ top: 14px; left: 14px; }
+  .intro-corner-tr{ top: 14px; right: 14px; }
+  .intro-corner-br{ bottom: 14px; right: 14px; }
+  .intro-corner-bl{ bottom: 14px; left: 14px; }
+}
+
+.intro-skip{
+  position: absolute; top: 28px; right: 28px; z-index: 3;
+  display: flex; align-items: center; gap: 8px;
+  background: transparent; border: 1px solid var(--paper-line-strong);
+  color: var(--ink-soft); font-family: var(--sans); font-size: 12px;
+  letter-spacing: .14em; text-transform: uppercase;
+  padding: 10px 16px; border-radius: 999px; cursor: pointer;
+  transition: color .3s var(--ease), border-color .3s var(--ease), background .3s var(--ease);
+}
+.intro-skip:hover{ color: var(--ink); border-color: var(--gold); background: rgba(201,169,97,0.1); }
+.intro-skip svg{ width: 12px; height: 12px; }
+
+.intro-stage{
+  position: relative; width: min(720px, 86vw);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+}
+
+/* ---------- Stage 1: architectural blueprint lettering ---------- */
+.intro-blueprint{
+  position: relative; width: 100%;
+  transition: opacity .8s var(--ease), transform .9s var(--ease), filter .8s var(--ease);
+}
+.intro.is-building .intro-blueprint{
+  opacity: 0; transform: scale(.94) translateY(-10px); filter: blur(2px);
+}
+
+.intro-plan{ width: 100%; height: auto; overflow: visible; }
+
+/* RAON built letter-by-letter as a pencil construction drawing (fast pen-stroke reveal) */
+.rc-shape{
+  fill: url(#introHatch); fill-opacity: 0; stroke: var(--ink); stroke-width: 2.25; stroke-linejoin: miter;
+  transition: fill-opacity .12s linear;
+}
+.rc-hole{
+  fill: var(--paper); fill-opacity: 0; stroke: var(--ink); stroke-width: 1.75; stroke-linejoin: miter;
+  transition: fill-opacity .12s linear;
+}
+.rc-leg-ink{ fill: none; stroke: var(--ink); stroke-width: 48; stroke-linecap: butt; stroke-linejoin: bevel; }
+.rc-leg-paper{ fill: none; stroke: var(--paper); stroke-width: 40; stroke-linecap: butt; stroke-linejoin: bevel; }
+.rc-leg-hatch{ fill: none; stroke: url(#introHatch); stroke-width: 40; stroke-linecap: butt; stroke-linejoin: bevel; opacity: .95; }
+.rc-guide{ stroke: rgba(244,242,238,0.4); stroke-width: 1; fill: none; }
+.rc-circle{
+  fill: var(--paper); fill-opacity: 0; stroke: var(--ink); stroke-width: 1.25;
+  transition: fill-opacity .1s linear;
+}
+.rc-circle-text{
+  fill: var(--ink-soft); font-family: var(--sans); font-size: 9px; text-anchor: middle;
+  opacity: 0; transition: opacity .1s linear;
+}
+.rc-arrow{ stroke: var(--ink); stroke-width: 1.1; fill: none; }
+.rc-arrow-text{
+  fill: var(--ink-soft); font-family: var(--sans); font-size: 12px; font-style: italic;
+  opacity: 0; transition: opacity .1s linear;
+}
+[data-letter]{ opacity: 0; transition: opacity .05s linear; }
+[data-letter].rc-active{ opacity: 1; }
+
+.rp-annot{ opacity: 0; transition: opacity .6s var(--ease); }
+.intro.is-annot .rp-annot{ opacity: 1; }
+.rp-dim{ stroke: var(--ink-soft); stroke-width: 1; fill: none; }
+.rp-dim-text{ fill: var(--ink-soft); font-family: var(--sans); font-size: 13px; letter-spacing: .08em; }
+.rp-bubble{ fill: var(--paper); stroke: var(--ink-soft); stroke-width: 1; }
+.rp-bubble-text{ fill: var(--ink-soft); font-family: var(--sans); font-size: 11px; text-anchor: middle; }
+.rp-leader{ stroke: var(--paper-line-strong); stroke-width: 1; stroke-dasharray: 2 3; }
+
+/* ---------- Stage 2: wordmark + actions ---------- */
+.intro-copy{
+  position: relative; margin-top: 8px;
+  display: flex; flex-direction: column; align-items: center; text-align: center;
+  gap: 16px; opacity: 0; transform: translateY(14px);
+  transition: opacity .9s var(--ease), transform .9s var(--ease);
+}
+.intro.is-building .intro-copy{ opacity: 1; transform: translateY(0); }
+
+.intro-copy .intro-eyebrow{
+  font-family: var(--sans); font-size: 11px; letter-spacing: .32em;
+  text-transform: uppercase; color: var(--gold-bright);
+}
+.intro-copy .intro-name{
+  font-family: var(--serif-en); font-weight: 600; font-size: clamp(26px, 4vw, 42px);
+  color: var(--ink); letter-spacing: .02em; margin: 0;
+}
+.intro-copy .intro-name em{ color: var(--gold-bright); font-style: normal; }
+
+.intro-enter{
+  margin-top: 8px;
+  display: inline-flex; align-items: center; gap: 10px;
+  background: transparent; border: 1px solid var(--ink);
+  color: var(--ink); font-family: var(--sans); font-size: 13px;
+  letter-spacing: .18em; text-transform: uppercase;
+  padding: 14px 30px; border-radius: 999px; cursor: pointer;
+  transition: transform .3s var(--ease), border-color .3s var(--ease), background .3s var(--ease), color .3s var(--ease);
+}
+.intro-enter:hover{ background: var(--ink); color: var(--paper); transform: translateY(-2px); }
+.intro-enter svg{ width: 14px; height: 14px; transition: transform .3s var(--ease); }
+.intro-enter:hover svg{ transform: translateX(3px); }
+
+@media (max-width: 640px){
+  .intro-stage{ width: 90vw; }
+  .intro-skip{ top: 18px; right: 18px; padding: 8px 13px; font-size: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce){
+  .intro-blueprint, .intro-copy, .intro-grid, .intro-sheet, .rp-annot{ transition: none !important; animation: none !important; }
+}
+
+body.intro-active{ overflow: hidden; }
