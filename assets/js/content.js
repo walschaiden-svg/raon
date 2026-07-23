@@ -251,6 +251,33 @@ export async function fetchFeaturedPortfolio() {
   }
 }
 
+// Showroom(마우스 트레일)용 — 게시된 모든 프로젝트의 대표 이미지만 가볍게 조회.
+// Supabase 미연결/오류 시 fallback 이미지를 사용해 항상 무언가는 보이도록 한다.
+export async function fetchShowroomImages(limit = 60) {
+  const fallback = () => FALLBACK_PORTFOLIO
+    .filter(i => i.cover_image_url)
+    .map(i => ({ id: String(i.id), title: i.title, src: i.cover_image_url }));
+
+  const supabase = await getSupabase();
+  if (!supabase) return fallback();
+  try {
+    const { data, error } = await supabase.from('portfolio_items')
+      .select('id, title, cover_image_url')
+      .eq('published', true)
+      .order('sort_order', { ascending: false })
+      .order('created_at', { ascending: false })
+      .limit(limit);
+    if (error) throw error;
+    const items = (data || [])
+      .filter(i => i.cover_image_url)
+      .map(i => ({ id: String(i.id), title: i.title, src: i.cover_image_url }));
+    return items.length ? items : fallback();
+  } catch (err) {
+    console.error('[content] fetchShowroomImages failed, using fallback:', err);
+    return fallback();
+  }
+}
+
 export async function submitInquiry(payload) {
   const supabase = await getSupabase();
   if (!supabase) throw new Error('문의 시스템에 연결할 수 없습니다. 잠시 후 다시 시도해주세요.');

@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Showroom | RAON DESIGNSTUDIO — 인터랙티브 쇼룸</title>
+<meta name="description" content="마우스를 움직이면 라온디자인스튜디오의 건축 축소모형 작업이 화면을 따라 펼쳐집니다. 감각적으로 둘러보는 인터랙티브 쇼룸.">
+<link rel="icon" href="data:,">
+<link rel="stylesheet" href="assets/css/style.css">
+<link rel="stylesheet" href="assets/css/showroom.css">
+</head>
+<body>
+
+<header class="site-header">
+  <div class="container">
+    <a href="index.html" class="logo">RAON <span>DESIGN</span>STUDIO<small>ARCHITECTURAL SCALE MODEL</small></a>
+    <nav class="nav-desktop">
+      <a href="index.html">HOME</a>
+      <a href="about.html">ABOUT</a>
+      <a href="portfolio.html">PORTFOLIO</a>
+      <a href="process.html">PROCESS</a>
+      <a href="contact.html">CONTACT</a>
+      <a href="showroom.html">SHOWROOM</a>
+    </nav>
+    <div class="nav-cta">
+      <a href="contact.html" class="btn btn-primary">문의하기</a>
+      <button class="nav-toggle" aria-label="메뉴 열기"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<nav class="mobile-nav">
+  <a href="index.html">Home</a>
+  <a href="about.html">About</a>
+  <a href="portfolio.html">Portfolio</a>
+  <a href="process.html">Process</a>
+  <a href="contact.html">Contact</a>
+  <a href="showroom.html">Showroom</a>
+</nav>
+
+<!-- ================= SHOWROOM STAGE ================= -->
+<main class="sr-stage" id="srStage">
+  <div class="sr-backdrop">
+    <p class="sr-mark">RAON<br><em>DESIGN</em>STUDIO</p>
+    <span class="sr-sub">Architectural Scale Model · Interactive Showroom</span>
+    <span class="sr-hint" id="srHint">Move your cursor</span>
+  </div>
+</main>
+
+<script src="assets/js/main.js"></script>
+<script type="module" src="assets/js/analytics.js"></script>
+<script type="module" src="assets/js/showroom.js"></script>
+</body>
+</html>
