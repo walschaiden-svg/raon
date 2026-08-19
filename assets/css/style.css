@@ -516,18 +516,19 @@ section{ position: relative; }
 .filter-reset::before{ content: '↺'; font-size: 13px; line-height: 1; }
 .filter-reset:hover{ color: var(--gold); }
 
-/* Masonry via CSS multi-column: each tile keeps its photo's own aspect
-   ratio instead of being cropped into a uniform box, so the grid reads
-   like a curated wall of prints rather than a repeating feed. */
-.gallery-grid{ column-count: 3; column-gap: 24px; }
+/* Row-first grid: tiles read left-to-right across each row, so the on-site
+   order matches the numbering set in the admin. Uniform tiles (cover-cropped)
+   keep the rows flush -- a multi-column masonry would fill top-to-bottom and
+   scramble that reading order. */
+.gallery-grid{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
 .gallery-item{
   position: relative; overflow: hidden; border-radius: 2px; cursor: pointer;
-  break-inside: avoid; margin-bottom: 24px;
+  aspect-ratio: 1 / 1;
   background: var(--bg-elevated);
   transition: opacity .4s, transform .4s;
 }
 .gallery-item.hide{ display: none; }
-.gallery-item img{ display: block; width: 100%; height: auto; transition: transform .9s var(--ease); transform: scale(1.14); }
+.gallery-item img{ display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .9s var(--ease); transform: scale(1.14); }
 .gallery-item.in img{ transform: scale(1); }
 .gallery-item:hover img{ transform: scale(1.08); }
 .gallery-item .g-curtain{
@@ -570,18 +571,56 @@ section{ position: relative; }
 .pf-lightbox{
   position: fixed; inset: 0; z-index: 300;
   background: rgba(6,6,6,.96);
-  display: flex; align-items: center; justify-content: center;
+  display: flex; align-items: center; justify-content: center; gap: 20px;
   opacity: 0; visibility: hidden; transition: opacity .35s;
   padding: 40px;
 }
 .pf-lightbox.is-open{ opacity: 1; visibility: visible; }
-.pf-lightbox img{ max-width: 92vw; max-height: 88vh; object-fit: contain; border: 1px solid var(--border-strong); }
+.pf-lightbox img{ max-width: calc(100vw - 224px); max-height: 88vh; object-fit: contain; border: 1px solid var(--border-strong); }
+/* 재생 틀은 높이를 먼저 정하고 aspect-ratio가 폭을 끌어오게 둡니다 — 쇼츠는
+   세로로 길쭉하게, 일반 영상은 가로로 넓게 잡혀 레터박스가 생기지 않습니다. */
+.pf-lightbox-video{
+  position: relative; background: #000; border: 1px solid var(--border-strong);
+  aspect-ratio: 16 / 9; height: min(88vh, calc((100vw - 224px) * 9 / 16));
+}
+.pf-lightbox-video.is-short{ aspect-ratio: 9 / 16; height: min(88vh, calc((100vw - 224px) * 16 / 9)); }
+.pf-lightbox-video iframe{ position: absolute; inset: 0; width: 100%; height: 100%; border: 0; }
 .pf-lightbox-close{
   position: absolute; top: 30px; right: 40px; width: 44px; height: 44px; border-radius: 50%;
   border: 1px solid var(--border-strong); background: transparent; color: #fff; font-size: 22px;
   display: flex; align-items:center; justify-content:center;
 }
 .pf-lightbox-close:hover{ border-color: var(--gold); color: var(--gold); }
+/* Laid out in the flex row beside the photo, not pinned to the viewport edge:
+   a tall image renders far narrower than the backdrop, so edge-anchored arrows
+   ended up marooned in empty space where they read as page furniture.
+   :disabled uses visibility (not display) so the hidden arrow keeps its slot
+   and the photo never shifts sideways when you reach either end. */
+.pf-lightbox-nav{
+  flex-shrink: 0; z-index: 2;
+  width: 52px; height: 52px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.8);
+  display: flex; align-items: center; justify-content: center;
+  transition: all .25s;
+}
+.pf-lightbox-nav svg{ width: 20px; height: 20px; }
+.pf-lightbox-nav:hover{ border-color: var(--gold); color: var(--gold); background: rgba(201,169,97,.12); }
+.pf-lightbox-nav:disabled{ opacity: 0; visibility: hidden; }
+/* On phones the photo already spans nearly the full width, so the edges *are*
+   beside it -- overlay there instead of stealing width from the image. */
+@media (max-width: 760px){
+  .pf-lightbox{ padding: 20px; gap: 0; }
+  .pf-lightbox img{ max-width: calc(100vw - 40px); }
+  .pf-lightbox-video{ height: min(80vh, calc((100vw - 40px) * 9 / 16)); }
+  .pf-lightbox-video.is-short{ height: min(80vh, calc((100vw - 40px) * 16 / 9)); }
+  .pf-lightbox-nav{
+    position: absolute; top: 50%; transform: translateY(-50%);
+    width: 42px; height: 42px; background: rgba(6,6,6,.55);
+  }
+  .pf-lightbox-prev{ left: 10px; }
+  .pf-lightbox-next{ right: 10px; }
+}
 
 /* ==========================================================================
    Process page
@@ -748,8 +787,6 @@ section{ position: relative; }
   padding: 40px; gap: 18px;
   background: var(--bg); display: flex; flex-direction: column;
 }
-.pf-detail-video{ position: relative; aspect-ratio: 16/9; background: #000; overflow: hidden; flex-shrink: 0; border-radius: 14px; }
-.pf-detail-video iframe{ width: 100%; height: 100%; border: 0; }
 
 /* 사진 콜라주 BSP 레이아웃 — 각 노드는 assets/js/detail-layouts.js의 트리를
    그대로 중첩 flexbox로 그린 것입니다. split 노드는 방향/비율만 정하고,
@@ -766,6 +803,30 @@ section{ position: relative; }
 .pf-canvas-empty{ min-height: 60px; min-width: 60px; }
 .pf-canvas-cell img{ position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; transition: transform .35s; }
 .pf-canvas-cell:hover img{ transform: scale(1.03); }
+
+/* 영상 칸 — 썸네일 두 겹. 아래(blur)는 칸을 cover로 꽉 채워 배경을 만들고,
+   위(sharp)는 contain으로 원본 비율을 온전히 보여줍니다. 덕분에 쇼츠(9:16)를
+   가로로 넓은 칸에 넣어도 검은 여백 없이, 잘리는 부분 없이 들어갑니다. */
+.pf-canvas-cell.is-video{ cursor: pointer; background: #000; }
+.pf-canvas-cell.is-video .pf-tile-blur{
+  object-fit: cover; transform: scale(1.2); filter: blur(26px) saturate(1.15) brightness(.55);
+}
+.pf-canvas-cell.is-video:hover .pf-tile-blur{ transform: scale(1.2); }
+.pf-canvas-cell.is-video .pf-tile-sharp{ object-fit: contain; }
+.pf-canvas-cell.is-video:hover .pf-tile-sharp{ transform: scale(1.03); }
+.pf-tile-play{
+  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+  width: 56px; height: 56px; border-radius: 50%; z-index: 2;
+  border: 1px solid rgba(255,255,255,.55); background: rgba(0,0,0,.42);
+  color: #fff; font-size: 15px; padding-left: 3px;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .25s; pointer-events: none;
+}
+.pf-canvas-cell.is-video:hover .pf-tile-play{ background: rgba(0,0,0,.62); border-color: var(--gold); color: var(--gold); }
+.pf-canvas-cell.is-video::after{ content: '재생'; }
+/* 칸과 영상 비율이 비슷할 때(fitVideoTiles가 판정) — 꽉 채우고 블러 배경은 끕니다. */
+.pf-canvas-cell.is-video.fill .pf-tile-sharp{ object-fit: cover; }
+.pf-canvas-cell.is-video.fill .pf-tile-blur{ display: none; }
 .pf-canvas-cell::after{
   content: '확대'; position: absolute; bottom: 10px; right: 10px; font-size: 10px; letter-spacing: .1em; text-transform: uppercase;
   color: rgba(255,255,255,.85); border: 1px solid rgba(255,255,255,.35); padding: 4px 10px; pointer-events: none; opacity: 0; transition: opacity .25s;
@@ -819,7 +880,7 @@ section{ position: relative; }
   .work-grid > .work-card:first-child{ grid-column: span 2; grid-row: span 1; aspect-ratio: 16/9; }
   .about-intro{ grid-template-columns: 1fr; gap: 48px; }
   .equip-grid{ grid-template-columns: repeat(2,1fr); }
-  .gallery-grid{ column-count: 2; }
+  .gallery-grid{ grid-template-columns: repeat(2, 1fr); }
   .contact-layout{ grid-template-columns: 1fr; }
   .partner-strip{ grid-template-columns: repeat(3,1fr); }
   .footer-top{ grid-template-columns: 1fr 1fr; row-gap: 40px; }
@@ -832,7 +893,7 @@ section{ position: relative; }
   .work-grid > .work-card:first-child{ grid-column: span 1; }
   .stat-row{ grid-template-columns: 1fr; }
   .equip-grid{ grid-template-columns: 1fr; }
-  .gallery-grid{ column-count: 1; }
+  .gallery-grid{ grid-template-columns: 1fr; }
   .process-step{ grid-template-columns: 1fr; gap: 28px; }
   .process-step:nth-child(even) .p-text, .process-step:nth-child(even) .p-media{ order: initial; }
   .form-row{ grid-template-columns: 1fr; }

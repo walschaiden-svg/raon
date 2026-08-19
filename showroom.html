@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Showroom | RAON DESIGNSTUDIO — 인터랙티브 쇼룸</title>
-<meta name="description" content="마우스를 움직이면 라온디자인스튜디오의 건축 축소모형 작업이 화면을 따라 펼쳐집니다. 감각적으로 둘러보는 인터랙티브 쇼룸.">
+<title>RAONGRAM | RAON DESIGNSTUDIO — 작업 피드</title>
+<meta name="description" content="RAONGRAM — 라온디자인스튜디오가 만든 건축 축소모형 작업을 사진·릴스·움짤로 쭉 훑어보세요.">
 <link rel="icon" href="data:,">
 <link rel="stylesheet" href="assets/css/style.css">
 <link rel="stylesheet" href="assets/css/showroom.css">
@@ -20,7 +20,7 @@
       <a href="portfolio.html">PORTFOLIO</a>
       <a href="process.html">PROCESS</a>
       <a href="contact.html">CONTACT</a>
-      <a href="showroom.html">SHOWROOM</a>
+      <a href="showroom.html">RAONGRAM</a>
     </nav>
     <div class="nav-cta">
       <a href="contact.html" class="btn btn-primary">문의하기</a>
@@ -35,17 +35,58 @@
   <a href="portfolio.html">Portfolio</a>
   <a href="process.html">Process</a>
   <a href="contact.html">Contact</a>
-  <a href="showroom.html">Showroom</a>
+  <a href="showroom.html">Raongram</a>
 </nav>
 
-<!-- ================= SHOWROOM STAGE ================= -->
-<main class="sr-stage" id="srStage">
-  <div class="sr-backdrop">
-    <p class="sr-mark">RAON<br><em>DESIGN</em>STUDIO</p>
-    <span class="sr-sub">Architectural Scale Model · Interactive Showroom</span>
-    <span class="sr-hint" id="srHint">Move your cursor</span>
+<!-- ================= RAONGRAM FEED ================= -->
+<main class="sr-page">
+
+  <!-- 프로필 헤더 -->
+  <header class="sr-profile">
+    <div class="sr-avatar" aria-hidden="true">R</div>
+    <div class="sr-profile-body">
+      <div class="sr-profile-top">
+        <h1 class="sr-handle">raon design</h1>
+        <span class="sr-verified" title="공식 계정" aria-label="공식 계정">✓</span>
+      </div>
+      <ul class="sr-stats">
+        <li><strong id="srCountPosts">0</strong> posts</li>
+        <li><strong id="srCountLikes">0</strong> likes</li>
+      </ul>
+      <p class="sr-bio">Architectural Scale Model · 건축 축소모형<br>Built by hand in Seoul. Photographed as they leave the studio.</p>
+    </div>
+  </header>
+
+  <!-- 탭 -->
+  <nav class="sr-tabs" id="srTabs" role="tablist">
+    <button class="sr-tab active" data-type="all" role="tab" aria-selected="true">All</button>
+    <button class="sr-tab" data-type="photo" role="tab" aria-selected="false">Stills</button>
+    <button class="sr-tab" data-type="reel" role="tab" aria-selected="false">Reels</button>
+    <button class="sr-tab" data-type="motion" role="tab" aria-selected="false">Loops</button>
+  </nav>
+
+  <div class="sr-grid" id="srGrid"></div>
+
+  <div class="sr-empty" id="srEmpty" style="display:none;">
+    <span class="sr-empty-rule" aria-hidden="true"></span>
+    <p class="sr-empty-title" id="srEmptyTitle">Nothing here yet</p>
+    <p class="sr-empty-note" id="srEmptyNote">New work is added as it leaves the studio.</p>
   </div>
 </main>
+
+<!-- ================= 피드 뷰어 (탭하면 열리는 인스타형 세로 피드) ================= -->
+<div class="sr-viewer" id="srViewer" aria-hidden="true">
+  <button class="sr-viewer-close" id="srViewerClose" aria-label="닫기">&times;</button>
+  <button class="sr-viewer-nav sr-viewer-prev" id="srPrevBtn" aria-label="이전 게시물">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M15 5l-8 7 8 7"/></svg>
+  </button>
+  <div class="sr-viewer-stage" id="srViewerStage"></div>
+  <button class="sr-viewer-nav sr-viewer-next" id="srNextBtn" aria-label="다음 게시물">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l8 7-8 7"/></svg>
+  </button>
+</div>
+
+<div class="sr-toast" id="srToast"></div>
 
 <script src="assets/js/main.js"></script>
 <script type="module" src="assets/js/analytics.js"></script>

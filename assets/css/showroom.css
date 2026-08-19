@@ -1,142 +1,235 @@
-/* ==========================================================================
-   RAON DESIGNSTUDIO — SHOWROOM (마우스 이미지 트레일)
-   전용 스코프(.sr-*)로 격리 — 다른 페이지에 영향 없음
-   ========================================================================== */
+/* ===========================================================================
+   SHOWROOM — SNS 피드
+   설명 문구 없이 작업 사진만 쭉 보는 화면입니다. 프로필 헤더 + 정사각 그리드로
+   훑다가, 하나를 누르면 세로 피드 뷰어가 열려 크게 보면서 좋아요/공유를 합니다.
+   전용 스코프(.sr-*)라 다른 페이지와 충돌하지 않습니다.
+   ======================================================================== */
 
-.sr-stage{
-  position: fixed;
-  inset: 0;
-  top: var(--header-h);
-  overflow: hidden;
-  background: var(--bg);
-  cursor: crosshair;
-  z-index: 1;
+.sr-page{
+  max-width: 960px; margin: 0 auto; padding: 120px 20px 100px;
 }
 
-/* 배경에 크게 박힌 브랜드 레터링 */
-.sr-backdrop{
-  position: absolute;
-  inset: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  pointer-events: none;
-  user-select: none;
-  z-index: 1;
-  padding: 24px;
+/* ---------- 프로필 헤더 ---------- */
+.sr-profile{
+  display: flex; align-items: center; gap: 40px;
+  padding-bottom: 40px; border-bottom: 1px solid var(--border);
 }
-.sr-backdrop .sr-mark{
-  font-family: var(--serif-en);
-  font-weight: 600;
-  line-height: .92;
-  letter-spacing: -0.01em;
-  color: transparent;
-  -webkit-text-stroke: 1px rgba(255,255,255,0.14);
-  text-transform: uppercase;
-  font-size: clamp(56px, 13vw, 220px);
-  margin: 0;
+.sr-avatar{
+  flex-shrink: 0; width: 132px; height: 132px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--serif-en, var(--serif)); font-size: 2.8rem; color: var(--gold);
+  background: var(--bg-elevated);
+  border: 1px solid var(--gold-line);
 }
-.sr-backdrop .sr-mark em{
-  font-style: italic;
-  color: rgba(201,169,97,0.18);
-  -webkit-text-stroke: 0;
+/* 업로드한 프로필 사진이 있으면 글자 대신 사진이 원을 채웁니다. */
+.sr-avatar.has-image{ padding: 0; overflow: hidden; }
+.sr-avatar img{ width: 100%; height: 100%; object-fit: cover; display: block; border-radius: 50%; }
+.sr-profile-body{ min-width: 0; }
+.sr-profile-top{ display: flex; align-items: center; gap: 10px; margin-bottom: 18px; }
+.sr-handle{ font-size: 1.4rem; font-weight: 400; letter-spacing: .02em; }
+.sr-verified{
+  width: 19px; height: 19px; border-radius: 50%; flex-shrink: 0;
+  background: var(--gold); color: var(--bg);
+  font-size: 11px; line-height: 1;
+  display: flex; align-items: center; justify-content: center;
 }
-.sr-backdrop .sr-sub{
-  margin-top: clamp(14px, 2.4vw, 30px);
-  font-family: var(--sans);
-  font-size: clamp(10px, 1vw, 13px);
-  letter-spacing: .42em;
-  text-transform: uppercase;
-  color: var(--text-faint);
+.sr-stats{ display: flex; gap: 32px; list-style: none; margin: 0 0 18px; padding: 0; font-size: .92rem; color: var(--text-muted); }
+.sr-stats strong{ color: var(--text); font-weight: 500; }
+.sr-bio{ font-size: .88rem; line-height: 1.7; color: var(--text-muted); }
+
+/* ---------- 탭 ----------
+   활성 표시는 글자색 + 아래 금색 밑줄 + 옆의 개수, 세 가지가 함께 움직입니다.
+   전에는 1px 선 하나뿐이라 게시물이 없는 탭으로 옮기면 아무 반응이 없는 것처럼
+   보였습니다 — 눌린 게 보여야 비어 있다는 사실도 정보가 됩니다. */
+.sr-tabs{ display: flex; justify-content: center; gap: 8px; border-bottom: 1px solid var(--border); }
+.sr-tab{
+  position: relative; background: none; border: 0; padding: 20px 22px;
+  font-family: inherit; font-size: 11px; letter-spacing: .2em; text-transform: uppercase;
+  color: var(--text-faint); cursor: pointer;
+  transition: color .25s;
 }
-.sr-backdrop .sr-hint{
-  position: absolute;
-  bottom: clamp(20px, 5vh, 48px);
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 11px;
-  letter-spacing: .32em;
-  text-transform: uppercase;
-  color: var(--text-faint);
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  transition: opacity .6s var(--ease);
+.sr-tab::after{
+  content: ''; position: absolute; left: 22px; right: 22px; bottom: -1px; height: 1px;
+  background: var(--gold); transform: scaleX(0); transform-origin: center;
+  transition: transform .35s var(--ease, ease);
 }
-.sr-backdrop .sr-hint.is-hidden{ opacity: 0; }
-.sr-backdrop .sr-hint::before,
-.sr-backdrop .sr-hint::after{
-  content: '';
-  width: 26px;
-  height: 1px;
-  background: var(--gold-line);
+.sr-tab:hover{ color: var(--text-muted); }
+.sr-tab.active{ color: var(--gold); }
+.sr-tab.active::after{ transform: scaleX(1); }
+/* 탭 이름 옆의 개수 — 어느 탭이 비었는지 누르기 전에 보입니다. */
+.sr-tab-n{ margin-left: 7px; font-size: 10px; letter-spacing: .1em; opacity: .55; }
+
+/* ---------- 정사각 그리드 ---------- */
+.sr-grid{ display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; margin-top: 4px; }
+.sr-cell{
+  position: relative; aspect-ratio: 1 / 1; overflow: hidden; cursor: pointer;
+  background: var(--bg-elevated); border: 0; padding: 0;
+}
+.sr-cell img, .sr-cell video{
+  width: 100%; height: 100%; object-fit: cover; display: block;
+  transition: transform .4s var(--ease, ease);
+}
+.sr-cell:hover img, .sr-cell:hover video{ transform: scale(1.04); }
+/* 종류 배지 — 인스타처럼 우상단에 아이콘만 */
+.sr-badge{
+  position: absolute; top: 8px; right: 9px; z-index: 2;
+  font-size: 13px; line-height: 1; color: #fff;
+  text-shadow: 0 1px 4px rgba(0,0,0,.6); pointer-events: none;
+}
+/* 데스크톱 hover 시 좋아요 수 오버레이 */
+.sr-cell-hover{
+  position: absolute; inset: 0; z-index: 1;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+  background: rgba(0,0,0,.42); color: #fff; font-size: .92rem;
+  opacity: 0; transition: opacity .25s;
+}
+.sr-cell:hover .sr-cell-hover{ opacity: 1; }
+
+/* ---------- 빈 상태 ----------
+   "없음"도 화면의 일부로 보이게 — 가는 금색 선 하나로 여백을 의도처럼 만듭니다. */
+.sr-empty{ text-align: center; padding: 96px 24px 110px; }
+.sr-empty-rule{ display: block; width: 44px; height: 1px; background: var(--gold-line); margin: 0 auto 28px; }
+.sr-empty-title{
+  font-family: var(--serif-en, var(--serif)); font-size: 1.35rem; color: var(--text);
+  letter-spacing: .02em; margin-bottom: 12px;
+}
+.sr-empty-note{ font-size: .84rem; color: var(--text-faint); letter-spacing: .04em; line-height: 1.7; }
+
+/* ---------- 피드 뷰어 ----------
+   포트폴리오 상세와 같은 라이트박스 규칙입니다: 한 번에 한 게시물, 좌우 화살표로
+   이동, 바깥 빈 공간을 누르면 닫힘. 화살표는 카드 옆에 나란히 놓여서(가장자리에
+   고정하지 않고) 카드 폭이 어떻든 항상 그 옆에 붙습니다. */
+.sr-viewer{
+  position: fixed; inset: 0; z-index: 400;
+  background: rgba(6,6,6,.94);
+  display: flex; align-items: center; justify-content: center; gap: 18px;
+  padding: 40px;
+  opacity: 0; visibility: hidden; transition: opacity .3s;
+}
+.sr-viewer.is-open{ opacity: 1; visibility: visible; }
+.sr-viewer-close{
+  position: absolute; top: 26px; right: 32px; z-index: 3;
+  width: 44px; height: 44px; border-radius: 50%;
+  border: 1px solid var(--border-strong); background: rgba(6,6,6,.5); color: #fff;
+  font-size: 21px; line-height: 1; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; transition: all .2s;
+}
+.sr-viewer-close:hover{ border-color: var(--gold); color: var(--gold); }
+.sr-viewer-nav{
+  flex-shrink: 0; width: 52px; height: 52px; border-radius: 50%;
+  border: 1px solid rgba(255,255,255,.18); background: rgba(255,255,255,.06);
+  color: rgba(255,255,255,.8); cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: all .25s;
+}
+.sr-viewer-nav svg{ width: 20px; height: 20px; }
+.sr-viewer-nav:hover{ border-color: var(--gold); color: var(--gold); background: rgba(201,169,97,.12); }
+/* visibility 로 숨겨야 자리를 유지해 끝 게시물에서 카드가 옆으로 밀리지 않습니다. */
+.sr-viewer-nav:disabled{ opacity: 0; visibility: hidden; }
+.sr-viewer-stage{
+  flex: 0 1 auto; min-width: 0;
+  max-height: calc(100vh - 80px); overflow-y: auto;
+  background: var(--bg-soft); border: 1px solid var(--border-strong);
 }
 
-/* 마우스 따라 생성되는 이미지 조각 */
-.sr-trail-item{
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: clamp(160px, 17vw, 260px);
-  aspect-ratio: 4 / 5;
-  margin: 0;
-  overflow: hidden;
-  border-radius: 4px;
-  pointer-events: none;
-  will-change: transform, opacity;
-  z-index: 2;
-  transform: translate3d(-50%, -50%, 0) scale(.82);
-  opacity: 0;
-  box-shadow: 0 24px 60px rgba(0,0,0,0.55);
-  animation: sr-pop 3500ms var(--ease) forwards;
+/* ---------- 피드 게시물 카드 ---------- */
+.sr-post{ width: 620px; max-width: calc(100vw - 220px); padding-bottom: 8px; }
+.sr-post-head{ display: flex; align-items: center; gap: 11px; padding: 14px 14px 12px; }
+.sr-post-avatar{
+  width: 34px; height: 34px; border-radius: 50%; flex-shrink: 0;
+  background: var(--bg-elevated); border: 1px solid var(--gold-line); color: var(--gold);
+  font-family: var(--serif-en, var(--serif)); font-size: .95rem;
+  display: flex; align-items: center; justify-content: center;
 }
-.sr-trail-item img{
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  display: block;
+.sr-post-author{ font-size: .88rem; }
+.sr-post-kind{ margin-left: auto; font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--text-faint); }
+
+/* 미디어 — 더블탭 좋아요를 받는 영역 */
+.sr-post-media{
+  position: relative; width: 100%; background: #000; overflow: hidden;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; user-select: none; -webkit-user-select: none;
+  max-height: 82vh;
 }
-/* 얇은 골드 프레임 + 캡션 */
-.sr-trail-item::after{
-  content: '';
-  position: absolute;
-  inset: 0;
-  border: 1px solid rgba(201,169,97,0.28);
-  border-radius: 4px;
-  pointer-events: none;
+.sr-post-media img, .sr-post-media video{
+  width: 100%; height: auto; max-height: 68vh; object-fit: contain; display: block;
 }
-.sr-trail-item .sr-cap{
-  position: absolute;
-  left: 10px;
-  bottom: 8px;
-  right: 10px;
-  font-size: 10px;
-  letter-spacing: .04em;
-  color: var(--text);
-  text-shadow: 0 1px 6px rgba(0,0,0,0.8);
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  opacity: .9;
+/* 릴스는 세로가 기본이라 화면을 넘지 않게 높이를 먼저 제한합니다. */
+.sr-post.is-reel .sr-post-media img,
+.sr-post.is-reel .sr-post-media video{ width: auto; max-width: 100%; height: 64vh; }
+
+/* 더블탭 하트 버스트 */
+.sr-burst{
+  position: absolute; top: 50%; left: 50%; z-index: 3;
+  transform: translate(-50%, -50%) scale(.3); opacity: 0;
+  font-size: 92px; color: #fff; pointer-events: none;
+  text-shadow: 0 4px 26px rgba(0,0,0,.5);
+}
+.sr-burst.pop{ animation: srBurst .9s var(--ease, ease) forwards; }
+@keyframes srBurst{
+  0%   { transform: translate(-50%,-50%) scale(.3); opacity: 0; }
+  18%  { transform: translate(-50%,-50%) scale(1.15); opacity: 1; }
+  38%  { transform: translate(-50%,-50%) scale(.95); opacity: 1; }
+  72%  { transform: translate(-50%,-50%) scale(1); opacity: 1; }
+  100% { transform: translate(-50%,-50%) scale(1.25); opacity: 0; }
 }
 
-@keyframes sr-pop{
-  0%   { opacity: 0; transform: translate3d(-50%, -50%, 0) scale(.82) rotate(var(--sr-rot, 0deg)); }
-  16%  { opacity: 1; transform: translate3d(-50%, -50%, 0) scale(1) rotate(var(--sr-rot, 0deg)); }
-  70%  { opacity: 1; transform: translate3d(-50%, calc(-50% + 6px), 0) scale(1) rotate(var(--sr-rot, 0deg)); }
-  100% { opacity: 0; transform: translate3d(-50%, calc(-50% + 26px), 0) scale(.94) rotate(var(--sr-rot, 0deg)); }
+/* 액션 바 */
+.sr-actions{ display: flex; align-items: center; gap: 6px; padding: 12px 10px 4px; }
+.sr-act{
+  background: none; border: 0; cursor: pointer; padding: 6px 8px;
+  font-size: 21px; line-height: 1; color: var(--text);
+  transition: transform .2s, color .2s;
 }
+.sr-act:hover{ transform: scale(1.12); }
+.sr-act.is-liked{ color: #e0685c; }
+.sr-act-share{ font-size: 18px; }
+.sr-likes{ padding: 4px 16px 14px; font-size: .87rem; color: var(--text); }
+.sr-likes strong{ font-weight: 500; }
 
-/* 모바일/터치 — 마우스가 없으니 자동 순환 폴백 */
-.sr-stage.is-touch{ cursor: default; }
-.sr-stage.is-touch .sr-hint{ display: none; }
-
-@media (prefers-reduced-motion: reduce){
-  .sr-trail-item{ animation-duration: 1600ms; }
+/* ---------- 토스트 ---------- */
+.sr-toast{
+  position: fixed; left: 50%; bottom: 34px; transform: translate(-50%, 16px);
+  z-index: 500; padding: 12px 22px; font-size: .86rem;
+  background: var(--bg-elevated); border: 1px solid var(--border-strong); color: var(--text);
+  opacity: 0; visibility: hidden; transition: all .28s;
 }
+.sr-toast.show{ opacity: 1; visibility: visible; transform: translate(-50%, 0); }
 
-@media (max-width: 640px){
-  .sr-trail-item{ width: 44vw; }
+/* ---------- 모바일: 인스타를 보는 감각 ---------- */
+@media (max-width: 760px){
+  .sr-page{ padding: 92px 0 80px; }
+  .sr-profile{
+    flex-direction: row; align-items: center; gap: 22px;
+    padding: 0 16px 22px;
+  }
+  .sr-avatar{ width: 82px; height: 82px; font-size: 1.8rem; }
+  .sr-profile-top{ margin-bottom: 12px; }
+  .sr-handle{ font-size: 1.1rem; }
+  .sr-stats{ gap: 20px; font-size: .82rem; margin-bottom: 0; }
+  /* 좁은 화면에서는 소개글을 아바타 아래 전체 폭으로 흘립니다. */
+  .sr-bio{ display: none; }
+  .sr-tabs{ gap: 0; }
+  .sr-tab{ flex: 1; text-align: center; padding: 15px 0; font-size: 10px; letter-spacing: .14em; }
+  .sr-tab::after{ left: 18%; right: 18%; }
+  .sr-empty{ padding: 72px 24px 84px; }
+  .sr-empty-title{ font-size: 1.15rem; }
+  .sr-grid{ gap: 2px; margin-top: 2px; }
+
+  /* 좁은 화면에서는 카드가 폭을 다 쓰도록, 화살표는 가장자리에 겹쳐 띄웁니다. */
+  .sr-viewer{ padding: 0; gap: 0; }
+  .sr-viewer-close{ top: 14px; right: 14px; width: 38px; height: 38px; font-size: 19px; }
+  .sr-viewer-nav{
+    position: absolute; top: 50%; transform: translateY(-50%); z-index: 2;
+    width: 42px; height: 42px; background: rgba(6,6,6,.55);
+  }
+  .sr-viewer-prev{ left: 8px; }
+  .sr-viewer-next{ right: 8px; }
+  .sr-viewer-stage{ width: 100%; max-height: 100vh; border: 0; }
+  .sr-post{ width: 100%; max-width: 100%; }
+  .sr-post-media{ max-height: none; }
+  .sr-post-media img, .sr-post-media video{ max-height: 74vh; }
+  .sr-post.is-reel .sr-post-media img,
+  .sr-post.is-reel .sr-post-media video{ height: auto; width: 100%; max-height: 74vh; }
+  .sr-act{ font-size: 23px; padding: 8px 9px; }
 }

@@ -82,6 +82,16 @@ export const DEFAULT_CONTENT = {
 4. 동의 거부 권리 및 불이익 안내
 귀하는 개인정보 수집·이용에 대한 동의를 거부할 권리가 있습니다. 다만, 동의하지 않으실 경우 견적 문의 접수 및 상담 진행이 제한될 수 있습니다.`,
   },
+  showroom: {
+    handle: 'raon design',
+    verified: true,
+    avatar_url: '',
+    bio: 'Architectural Scale Model · 건축 축소모형\nBuilt by hand in Seoul. Photographed as they leave the studio.',
+    tab_all: 'All',
+    tab_photo: 'Stills',
+    tab_reel: 'Reels',
+    tab_motion: 'Loops',
+  },
   portfolio: {
     field_labels: {
       region: '지역',
@@ -253,29 +263,54 @@ export async function fetchFeaturedPortfolio() {
 
 // Showroom(마우스 트레일)용 — 게시된 모든 프로젝트의 대표 이미지만 가볍게 조회.
 // Supabase 미연결/오류 시 fallback 이미지를 사용해 항상 무언가는 보이도록 한다.
-export async function fetchShowroomImages(limit = 60) {
-  const fallback = () => FALLBACK_PORTFOLIO
-    .filter(i => i.cover_image_url)
-    .map(i => ({ id: String(i.id), title: i.title, src: i.cover_image_url }));
+/* ---------------------------------------------------------------------------
+   SHOWROOM — SNS 형태의 피드 게시물과 좋아요
+--------------------------------------------------------------------------- */
 
+export async function fetchShowroomPosts() {
   const supabase = await getSupabase();
-  if (!supabase) return fallback();
+  if (!supabase) return [];
   try {
-    const { data, error } = await supabase.from('portfolio_items')
-      .select('id, title, cover_image_url')
+    const { data, error } = await supabase.from('showroom_posts')
+      .select('*')
       .eq('published', true)
       .order('sort_order', { ascending: false })
-      .order('created_at', { ascending: false })
-      .limit(limit);
+      .order('created_at', { ascending: false });
     if (error) throw error;
-    const items = (data || [])
-      .filter(i => i.cover_image_url)
-      .map(i => ({ id: String(i.id), title: i.title, src: i.cover_image_url }));
-    return items.length ? items : fallback();
+    return data || [];
   } catch (err) {
-    console.error('[content] fetchShowroomImages failed, using fallback:', err);
-    return fallback();
+    console.error('[content] fetchShowroomPosts failed:', err);
+    return [];
   }
+}
+
+/* 이 방문자가 이미 좋아요한 게시물 id 집합. 로그인이 없으므로 브라우저에
+   저장된 visitor_id 로만 구분합니다 — 브라우저를 바꾸거나 저장소를 비우면
+   좋아요 표시는 풀립니다(집계 수치는 그대로 남습니다). */
+export async function fetchLikedPostIds(visitorId) {
+  const supabase = await getSupabase();
+  if (!supabase || !visitorId) return new Set();
+  try {
+    const { data, error } = await supabase.rpc('showroom_liked_posts', { p_visitor: visitorId });
+    if (error) throw error;
+    return new Set((data || []).map(row => (typeof row === 'string' ? row : row.showroom_liked_posts)));
+  } catch (err) {
+    console.error('[content] fetchLikedPostIds failed:', err);
+    return new Set();
+  }
+}
+
+/* 좋아요 토글. 성공하면 { liked, count } 를 돌려줍니다. */
+export async function toggleShowroomLike(postId, visitorId) {
+  const supabase = await getSupabase();
+  if (!supabase) throw new Error('연결할 수 없습니다.');
+  const { data, error } = await supabase.rpc('showroom_toggle_like', {
+    p_post_id: postId,
+    p_visitor: visitorId,
+  });
+  if (error) throw error;
+  const row = Array.isArray(data) ? data[0] : data;
+  return { liked: !!row?.liked, count: Number(row?.like_count ?? 0) };
 }
 
 export async function submitInquiry(payload) {

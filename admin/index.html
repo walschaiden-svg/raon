@@ -23,6 +23,8 @@
     <a href="#contact" data-panel="contact">Contact</a>
     <div class="nav-section-label">Portfolio</div>
     <a href="#portfolio" data-panel="portfolio">프로젝트 관리</a>
+    <a href="#showroom" data-panel="showroom">RAONGRAM 피드</a>
+    <a href="#sns" data-panel="sns">SNS 관리</a>
     <div class="nav-section-label">CRM</div>
     <a href="#inquiries" data-panel="inquiries">견적 문의 <span class="nav-badge" id="inquiryBadge" style="display:none;"></span></a>
     <a href="#analytics" data-panel="analytics">방문자 분석</a>
@@ -258,15 +260,96 @@
         </select>
         <span class="save-status" id="pfListStatus"></span>
       </div>
-      <p class="card-desc" id="pfDragHint">행을 드래그해서 순서를 바꿀 수 있습니다. 번호가 높을수록 최신이며 먼저 노출됩니다.</p>
+      <p class="card-desc" id="pfDragHint">행을 드래그해서 순서를 바꿀 수 있습니다. 왼쪽 체크박스로 여러 개를 고르면 한 번에 옮길 수 있습니다. 번호가 높을수록 최신이며 먼저 노출됩니다. <span class="pf-select-count" id="pfSelectCount"></span></p>
       <div class="admin-table-wrap">
         <table class="admin-table">
           <thead>
-            <tr><th></th><th>번호</th><th></th><th>제목</th><th>카테고리</th><th>연도</th><th>공개상태</th><th></th></tr>
+            <tr><th class="col-select"><input type="checkbox" id="pfSelectAll" aria-label="전체 선택"></th><th></th><th>번호</th><th></th><th>제목</th><th>카테고리</th><th>연도</th><th>공개상태</th><th></th></tr>
           </thead>
           <tbody id="pfTableBody"></tbody>
         </table>
       </div>
+    </div>
+  </section>
+
+  <!-- ============ SHOWROOM FEED ============ -->
+  <section class="admin-panel" id="panel-showroom">
+    <div class="admin-topbar">
+      <div><h1>RAONGRAM 피드</h1><p>SNS처럼 보여지는 RAONGRAM 게시물입니다. 설명 문구 없이 작업물만 올라갑니다.</p></div>
+      <button class="btn btn-primary" id="addShowroomBtn">+ 새 게시물</button>
+    </div>
+
+    <div class="admin-card">
+      <div class="admin-toolbar">
+        <select class="fc" id="srFilterType" style="max-width:200px;">
+          <option value="all">전체 종류</option>
+          <option value="photo">사진</option>
+          <option value="reel">릴스</option>
+          <option value="motion">움짤</option>
+        </select>
+        <span class="save-status" id="srListStatus"></span>
+      </div>
+      <p class="card-desc">행을 드래그해서 노출 순서를 바꿀 수 있습니다. 위에 있을수록 RAONGRAM 앞쪽에 나옵니다.</p>
+      <div class="admin-table-wrap">
+        <table class="admin-table">
+          <thead>
+            <tr><th></th><th></th><th>종류</th><th>좋아요</th><th>공개상태</th><th>등록일</th><th></th></tr>
+          </thead>
+          <tbody id="srTableBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ SNS PROFILE ============ -->
+  <section class="admin-panel" id="panel-sns">
+    <div class="admin-topbar">
+      <div><h1>SNS 관리</h1><p>RAONGRAM 페이지 상단의 프로필입니다. 계정 이름, 프로필 사진, 소개글, 탭 이름을 바꿀 수 있습니다.</p></div>
+    </div>
+
+    <div class="admin-card">
+      <h3>프로필</h3>
+      <div class="field">
+        <label>프로필 사진</label>
+        <div class="image-uploader" id="sns_avatar_preview"></div>
+        <label class="upload-dropzone" style="margin-top:10px; width:100%;">프로필 사진 업로드<input type="file" accept="image/*" id="sns_avatar_file"></label>
+        <p class="card-desc" style="margin-top:6px;">원형으로 잘려서 보이므로 <strong>정사각형 이미지</strong>가 가장 깔끔합니다. 비워두면 로고 글자 "R"이 표시됩니다.</p>
+      </div>
+
+      <div class="field">
+        <label>계정 이름</label>
+        <input type="text" id="sns_handle" placeholder="raon design">
+        <p class="card-desc" style="margin-top:6px;">프로필 상단과 각 게시물의 작성자 이름에 함께 반영됩니다.</p>
+      </div>
+
+      <div class="checkbox-inline">
+        <input type="checkbox" id="sns_verified">
+        <label for="sns_verified">이름 옆에 인증 배지(✓) 표시</label>
+      </div>
+
+      <div class="field">
+        <label>소개글</label>
+        <textarea id="sns_bio" style="min-height:90px;" placeholder="한 줄씩 입력하면 그대로 줄바꿈됩니다."></textarea>
+        <p class="card-desc" style="margin-top:6px;">줄바꿈이 그대로 반영됩니다. 데스크톱에서만 보이고 모바일에서는 공간 관계로 숨겨집니다.</p>
+      </div>
+    </div>
+
+    <div class="admin-card">
+      <h3>탭 이름</h3>
+      <p class="card-desc">RAONGRAM에서 게시물 종류를 고르는 탭에 표시될 이름입니다. 종류 자체(사진/릴스/움짤)는 그대로이고 <strong>표기만</strong> 바뀝니다.</p>
+      <div class="form-row">
+        <div class="field"><label>전체</label><input type="text" id="sns_tab_all" placeholder="All"></div>
+        <div class="field"><label>사진</label><input type="text" id="sns_tab_photo" placeholder="Stills"></div>
+      </div>
+      <div class="form-row">
+        <div class="field"><label>릴스</label><input type="text" id="sns_tab_reel" placeholder="Reels"></div>
+        <div class="field"><label>움짤</label><input type="text" id="sns_tab_motion" placeholder="Loops"></div>
+      </div>
+    </div>
+
+    <div class="admin-save-bar">
+      <span class="save-status" id="snsSaveStatus"></span>
+      <button class="btn btn-primary" id="saveSns">저장하기</button>
     </div>
   </section>
 
@@ -415,7 +498,7 @@
       </div>
 
       <div class="field">
-        <label>상세 이미지 (최대 9장)</label>
+        <label>상세 이미지 (최대 9장 · 유튜브 영상을 넣으면 8장)</label>
         <div class="image-uploader" id="i_images_preview"></div>
         <label class="upload-dropzone" style="margin-top:10px; width:100%;">상세 이미지 업로드<input type="file" accept="image/*" multiple id="i_images_file"></label>
       </div>
@@ -429,7 +512,13 @@
       <div class="field">
         <label>유튜브 영상 URL (선택)</label>
         <input type="text" id="i_youtube" placeholder="https://www.youtube.com/watch?v=... 또는 https://youtu.be/...">
-        <p class="card-desc" style="margin-top:6px;">입력하면 상세페이지 맨 앞에 영상이 자동재생(음소거)으로 배치됩니다. 비워두면 기존처럼 사진으로만 구성됩니다.</p>
+        <p class="card-desc" style="margin-top:6px;">입력하면 영상이 <strong>사진 배치의 첫 번째 칸</strong>을 차지합니다. 칸에는 썸네일이 보이고, 클릭하면 크게 재생됩니다. 쇼츠(<code>/shorts/</code>) 링크는 세로 비율로 자동 재생됩니다. 영상이 한 칸을 쓰므로 사진은 8장까지 넣을 수 있습니다.</p>
+      </div>
+
+      <div class="field">
+        <label>SEO 태그 (검색엔진용, 쉼표로 구분)</label>
+        <input type="text" id="i_tags" placeholder="예: 아파트모형, 주거단지 조감도, 1/200 축척, 분양홍보관">
+        <p class="card-desc" style="margin-top:6px;">검색 노출용 키워드입니다. <strong>사이트 화면에는 표시되지 않고</strong>, 페이지 소스의 <code>meta keywords</code> 와 구조화 데이터(JSON-LD)에만 들어갑니다. 프로젝트와 실제로 관련된 단어만 넣어주세요 — 관련 없는 인기 검색어를 채워 넣으면 검색엔진에서 불이익을 받을 수 있습니다.</p>
       </div>
 
       <div class="checkbox-inline">
@@ -445,6 +534,58 @@
       <div class="admin-modal-actions">
         <button type="button" class="btn btn-outline" id="deleteItemBtn" style="display:none; margin-right:auto;">삭제</button>
         <button type="button" class="btn btn-outline" id="cancelItemBtn">취소</button>
+        <button type="submit" class="btn btn-primary">저장</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- ============ SHOWROOM POST MODAL ============ -->
+<div class="admin-modal" id="srModal">
+  <div class="admin-modal-panel">
+    <div class="admin-modal-head">
+      <h3 id="srModalTitle">새 게시물</h3>
+      <button class="admin-modal-close" id="srModalClose">&times;</button>
+    </div>
+    <form id="srForm">
+      <div class="field">
+        <label>종류 *</label>
+        <select id="sr_type">
+          <option value="photo">사진 — 정지 이미지 (RAONGRAM 표기: Stills)</option>
+          <option value="reel">릴스 — 세로 영상, 소리 있음 (RAONGRAM 표기: Reels)</option>
+          <option value="motion">움짤 — 짧은 무음 반복 재생 (RAONGRAM 표기: Loops)</option>
+        </select>
+        <p class="card-desc" style="margin-top:6px;" id="sr_type_hint"></p>
+      </div>
+
+      <div class="field">
+        <label id="sr_media_label">사진 파일</label>
+        <div class="image-uploader" id="sr_media_preview"></div>
+        <label class="upload-dropzone" style="margin-top:10px; width:100%;" id="sr_media_drop">파일 업로드<input type="file" id="sr_media_file"></label>
+        <p class="card-desc" style="margin-top:6px;">Supabase 저장소 기본 업로드 한도는 파일당 50MB입니다. 영상이 크면 압축하거나 유튜브 링크를 쓰세요.</p>
+      </div>
+
+      <div class="field" id="sr_youtube_field">
+        <label>또는 유튜브 링크 (릴스)</label>
+        <input type="text" id="sr_youtube" placeholder="https://www.youtube.com/shorts/... 또는 일반 영상 URL">
+        <p class="card-desc" style="margin-top:6px;">링크를 넣으면 <strong>업로드한 파일 대신 유튜브 영상이 사용됩니다.</strong> 쇼츠 링크는 세로 비율로 나옵니다.</p>
+      </div>
+
+      <div class="field" id="sr_poster_field">
+        <label>표지 이미지 (선택)</label>
+        <div class="image-uploader" id="sr_poster_preview"></div>
+        <label class="upload-dropzone" style="margin-top:10px; width:100%;">표지 업로드<input type="file" accept="image/*" id="sr_poster_file"></label>
+        <p class="card-desc" style="margin-top:6px;">영상 재생 전에 그리드와 피드에 보여줄 이미지입니다. 비워두면 영상의 첫 프레임이 쓰입니다.</p>
+      </div>
+
+      <div class="checkbox-inline">
+        <input type="checkbox" id="sr_published" checked>
+        <label for="sr_published">RAONGRAM에 공개</label>
+      </div>
+
+      <div class="admin-modal-actions">
+        <button type="button" class="btn btn-outline" id="srDeleteBtn" style="display:none; margin-right:auto;">삭제</button>
+        <button type="button" class="btn btn-outline" id="srCancelBtn">취소</button>
         <button type="submit" class="btn btn-primary">저장</button>
       </div>
     </form>
