@@ -2,6 +2,7 @@ const PROJECT_TYPE_LABEL = {
   residential: '주거단지',
   commercial: '상업시설',
   public: '공공기관 / 입찰용',
+  exhibition: '전시 · 박람회용',
   personal: '개인 소장용',
   etc: '기타',
 };

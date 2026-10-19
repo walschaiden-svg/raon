@@ -276,7 +276,6 @@ async function initAboutPanel() {
   document.getElementById('a_title2').value = about.intro_title_2 || '';
   document.getElementById('a_body').value = about.intro_body || '';
   document.getElementById('a_image').value = about.intro_image_url || '';
-  document.getElementById('a_partners_note').value = about.partners_note || '';
 
   const statsList = document.getElementById('statsList');
   const timelineList = document.getElementById('timelineList');
@@ -308,7 +307,6 @@ async function initAboutPanel() {
       intro_title_2: document.getElementById('a_title2').value,
       intro_body: document.getElementById('a_body').value,
       intro_image_url: document.getElementById('a_image').value,
-      partners_note: document.getElementById('a_partners_note').value,
       stats: syncList(statsList, STAT_FIELDS),
       timeline: syncList(timelineList, TIMELINE_FIELDS),
       equipment: syncList(equipList, EQUIP_FIELDS),
@@ -1172,7 +1170,7 @@ function initFeaturedPanel() {
 /* ---------------------------------------------------------------------------
    견적 문의 (INQUIRIES) 패널
 --------------------------------------------------------------------------- */
-const PROJECT_TYPE_LABEL = { residential: '주거단지', commercial: '상업시설', public: '공공기관/입찰', personal: '개인 소장용', etc: '기타' };
+const PROJECT_TYPE_LABEL = { residential: '주거단지', commercial: '상업시설', public: '공공기관/입찰', exhibition: '전시 · 박람회용', personal: '개인 소장용', etc: '기타' };
 const INQUIRY_STATUS_LABEL = { new: '신규', contacted: '연락완료', closed: '종결' };
 
 let inqCurrentStatus = 'all';

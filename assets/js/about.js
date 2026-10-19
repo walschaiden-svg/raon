@@ -42,8 +42,6 @@ async function init() {
   renderIntro(about);
   renderTimeline(about.timeline);
   renderEquipment(about.equipment);
-  const note = document.getElementById('partnersNote');
-  if (note && about.partners_note) note.textContent = about.partners_note;
 
   if (window.RAON && window.RAON.initReveal) window.RAON.initReveal();
 }
