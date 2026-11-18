@@ -2,7 +2,7 @@ import { supabase, requireAuth, logout } from './auth.js';
 import { uploadFile } from './upload.js';
 import { getDefault } from '../../assets/js/content.js';
 import { getVariantCount, MAX_DETAIL_IMAGES } from '../../assets/js/detail-layouts.js';
-import { parseYoutubeId } from '../../assets/js/youtube.js';
+import { parseYoutubeId, isShortsUrl, youtubeThumbnailCandidates, loadThumbnailInto } from '../../assets/js/youtube.js';
 
 /* ---------------------------------------------------------------------------
    공통 유틸
@@ -412,6 +412,10 @@ async function initContactPanel() {
 --------------------------------------------------------------------------- */
 let categoriesCache = [];
 
+// 어드민을 로컬에서 열어도 복사되는 광고 주소는 항상 실제 사이트 기준이어야 합니다.
+const PUBLIC_SITE_URL = 'https://raonmodel.co.kr';
+const SLUG_PATTERN = /^[a-z0-9]+(-[a-z0-9]+)*$/;
+
 function categoryLabel(key) {
   const c = categoriesCache.find(c => c.key === key);
   return c ? c.label : key;
@@ -440,9 +444,26 @@ function renderCategoryList() {
     <div class="category-row" data-key="${escapeAttr(c.key)}">
       <input type="number" class="cat-order" value="${c.sort_order}" style="width:64px;">
       <input type="text" class="cat-label" value="${escapeAttr(c.label)}" style="flex:1;">
+      <span class="cat-slug-prefix">?category=</span>
+      <input type="text" class="cat-slug" value="${escapeAttr(c.slug || '')}" placeholder="영문 주소" style="width:140px;">
+      <button type="button" class="btn-copy-url">주소 복사</button>
       <button type="button" class="btn-remove" data-remove-cat="${escapeAttr(c.key)}">삭제</button>
     </div>
   `).join('');
+
+  container.querySelectorAll('.btn-copy-url').forEach(btn => {
+    btn.addEventListener('click', async () => {
+      const row = btn.closest('.category-row');
+      const slug = row.querySelector('.cat-slug').value.trim() || row.dataset.key;
+      const url = `${PUBLIC_SITE_URL}/portfolio?category=${encodeURIComponent(slug)}`;
+      try {
+        await navigator.clipboard.writeText(url);
+        toast('복사됨: ' + url);
+      } catch {
+        prompt('아래 주소를 복사하세요.', url);
+      }
+    });
+  });
 
   container.querySelectorAll('[data-remove-cat]').forEach(btn => {
     btn.addEventListener('click', async () => {
@@ -475,7 +496,7 @@ function populateCategorySelects() {
 
 function initCategoryManager() {
   document.getElementById('addCategory').addEventListener('click', () => {
-    categoriesCache.push({ key: genCategoryKey(), label: '새 카테고리', sort_order: categoriesCache.length + 1 });
+    categoriesCache.push({ key: genCategoryKey(), label: '새 카테고리', sort_order: categoriesCache.length + 1, slug: '' });
     renderCategoryList();
   });
 
@@ -484,9 +505,16 @@ function initCategoryManager() {
       key: row.dataset.key,
       label: row.querySelector('.cat-label').value.trim(),
       sort_order: Number(row.querySelector('.cat-order').value) || 0,
+      slug: row.querySelector('.cat-slug').value.trim().toLowerCase() || null,
     })).filter(r => r.label);
 
     if (!rows.length) { toast('카테고리를 1개 이상 입력해주세요.', true); return; }
+
+    const badSlug = rows.find(r => r.slug && !SLUG_PATTERN.test(r.slug));
+    if (badSlug) { toast(`'${badSlug.label}' 주소는 영문 소문자·숫자·하이픈만 쓸 수 있습니다.`, true); return; }
+    const slugs = rows.map(r => r.slug).filter(Boolean);
+    const dupSlug = slugs.find((s, i) => slugs.indexOf(s) !== i);
+    if (dupSlug) { toast(`주소 '${dupSlug}'가 중복됩니다.`, true); return; }
 
     try {
       const { error } = await supabase.from('categories').upsert(rows, { onConflict: 'key' });
@@ -1709,15 +1737,45 @@ async function persistShowroomOrder(tbody) {
   }
 }
 
-/* 종류에 따라 입력란 구성이 달라집니다 — 사진에는 유튜브/표지가 필요 없습니다. */
+/* 릴스만 유튜브 링크/파일 중 하나를 고릅니다. 사진·움짤은 항상 파일입니다. */
+function srSource() {
+  if (document.getElementById('sr_type').value !== 'reel') return 'file';
+  return document.querySelector('input[name="sr_source"]:checked')?.value || 'youtube';
+}
+
+function setSrSource(value) {
+  document.querySelectorAll('input[name="sr_source"]').forEach(r => { r.checked = r.value === value; });
+}
+
+/* 종류·소스에 따라 입력란 구성이 달라집니다 — 사진에는 유튜브/표지가 필요 없고,
+   유튜브 링크를 고르면 파일 업로드와 표지는 쓰지 않습니다(썸네일을 유튜브에서 받음). */
 function syncShowroomTypeUi() {
   const type = document.getElementById('sr_type').value;
+  const useYoutube = srSource() === 'youtube';
   document.getElementById('sr_type_hint').textContent = SR_TYPE_HINT[type] || '';
   document.getElementById('sr_media_label').textContent =
     type === 'photo' ? '사진 파일' : (type === 'motion' ? '움짤 파일 (GIF / 짧은 mp4)' : '영상 파일');
   document.getElementById('sr_media_file').setAttribute('accept', SR_ACCEPT[type] || '*/*');
-  document.getElementById('sr_youtube_field').style.display = type === 'reel' ? '' : 'none';
-  document.getElementById('sr_poster_field').style.display = type === 'photo' ? 'none' : '';
+  document.getElementById('sr_source_field').style.display = type === 'reel' ? '' : 'none';
+  document.getElementById('sr_youtube_field').style.display = useYoutube ? '' : 'none';
+  document.getElementById('sr_media_field').style.display = useYoutube ? 'none' : '';
+  document.getElementById('sr_poster_field').style.display = type === 'photo' || useYoutube ? 'none' : '';
+  renderSrYoutubeCheck();
+}
+
+/* 링크를 붙여넣는 즉시 인식 여부와 썸네일을 보여줘, 잘못된 링크로 저장하는 일을 막습니다. */
+function renderSrYoutubeCheck() {
+  const el = document.getElementById('sr_youtube_check');
+  const url = document.getElementById('sr_youtube').value.trim();
+  if (!url) { el.innerHTML = ''; return; }
+  const id = parseYoutubeId(url);
+  if (!id) {
+    el.innerHTML = `<span class="err">유튜브 링크를 인식하지 못했습니다. 영상 주소를 그대로 복사해 넣어주세요.</span>`;
+    return;
+  }
+  const short = isShortsUrl(url);
+  el.innerHTML = `<img alt=""><span class="ok">✓ ${short ? '쇼츠(세로) — 9:16 프레임에 꽉 차게' : '일반 영상(가로) — 9:16 프레임 가운데에 맞춤'}</span>`;
+  loadThumbnailInto(el.querySelector('img'), youtubeThumbnailCandidates(id, { short }));
 }
 
 function renderSrPreview(containerId, url, onRemove) {
@@ -1748,6 +1806,8 @@ function openShowroomModal(post) {
   document.getElementById('srModalTitle').textContent = post ? '게시물 수정' : '새 게시물';
   document.getElementById('sr_type').value = post?.media_type || 'photo';
   document.getElementById('sr_youtube').value = post?.youtube_url || '';
+  // 새 릴스는 용량 제한이 없는 유튜브 링크가 기본이고, 기존 게시물은 저장된 방식을 따릅니다.
+  setSrSource(post && !parseYoutubeId(post.youtube_url) && post.media_url ? 'file' : 'youtube');
   document.getElementById('sr_published').checked = post ? !!post.published : true;
   document.getElementById('srDeleteBtn').style.display = post ? 'inline-flex' : 'none';
 
@@ -1795,6 +1855,8 @@ function initShowroomPanel() {
     if (e.target.id === 'srModal') closeShowroomModal();
   });
   document.getElementById('sr_type').addEventListener('change', syncShowroomTypeUi);
+  document.querySelectorAll('input[name="sr_source"]').forEach(r => r.addEventListener('change', syncShowroomTypeUi));
+  document.getElementById('sr_youtube').addEventListener('input', renderSrYoutubeCheck);
 
   document.getElementById('sr_media_file').addEventListener('change', async (e) => {
     const file = e.target.files[0];
@@ -1804,7 +1866,10 @@ function initShowroomPanel() {
       srMediaUrl = await uploadFile('portfolio', file);
       renderSrPreview('sr_media_preview', srMediaUrl, clearSrMedia);
       toast('업로드 완료');
-    } catch (err) { toast('업로드 실패: ' + err.message, true); }
+    } catch (err) {
+      const isReel = document.getElementById('sr_type').value === 'reel';
+      toast('업로드 실패: ' + err.message + (isReel ? ' — 용량이 크면 유튜브에 올린 뒤 링크로 등록하세요.' : ''), true);
+    }
     e.target.value = '';
   });
 
@@ -1829,18 +1894,23 @@ function initShowroomPanel() {
   document.getElementById('srForm').addEventListener('submit', async (e) => {
     e.preventDefault();
     const type = document.getElementById('sr_type').value;
-    const youtube = type === 'reel' ? document.getElementById('sr_youtube').value.trim() : '';
+    const useYoutube = srSource() === 'youtube';
+    const youtube = useYoutube ? document.getElementById('sr_youtube').value.trim() : '';
 
-    // 유튜브 링크가 있으면 그것만으로 충분하고, 없으면 파일이 반드시 필요합니다.
-    if (!srMediaUrl && !parseYoutubeId(youtube)) {
-      toast(type === 'reel' ? '영상 파일을 올리거나 유튜브 링크를 넣어주세요.' : '파일을 올려주세요.', true);
+    if (useYoutube && !parseYoutubeId(youtube)) {
+      toast('올바른 유튜브 링크를 넣어주세요.', true);
+      return;
+    }
+    if (!useYoutube && !srMediaUrl) {
+      toast(type === 'reel' ? '영상 파일을 올려주세요.' : '파일을 올려주세요.', true);
       return;
     }
 
+    // 고른 소스 하나만 저장합니다 — 둘 다 남아 있으면 공개 페이지가 어느 쪽을 쓸지 헷갈립니다.
     const payload = {
       media_type: type,
-      media_url: srMediaUrl,
-      poster_url: type === 'photo' ? '' : srPosterUrl,
+      media_url: useYoutube ? '' : srMediaUrl,
+      poster_url: type === 'photo' || useYoutube ? '' : srPosterUrl,
       youtube_url: youtube,
       published: document.getElementById('sr_published').checked,
     };

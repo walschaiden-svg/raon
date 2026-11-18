@@ -14,7 +14,8 @@ create table if not exists page_content (
 create table if not exists categories (
   key         text primary key,
   label       text not null,
-  sort_order  integer not null default 0
+  sort_order  integer not null default 0,
+  slug        text unique             -- 공개 주소용: /portfolio?category=<slug> (migration_008)
 );
 
 insert into categories (key, label, sort_order) values

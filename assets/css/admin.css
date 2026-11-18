@@ -122,6 +122,21 @@ body.admin-body.theme-light{
   padding: 10px 12px; font-size: .88rem; font-family: inherit;
 }
 .category-row input:focus{ outline: none; border-color: var(--gold-line); }
+.category-row .cat-slug-prefix{ font-size: .78rem; color: var(--text-faint); white-space: nowrap; }
+.category-row .btn-copy-url{
+  background: none; border: 1px solid var(--border); color: var(--text-muted);
+  padding: 9px 12px; font-size: .8rem; cursor: pointer; white-space: nowrap;
+}
+.category-row .btn-copy-url:hover{ border-color: var(--gold-line); color: var(--text); }
+
+/* ---------- RAONGRAM 게시물: 영상 소스 선택 / 유튜브 링크 확인 ---------- */
+.sr-source-toggle{ display: flex; gap: 18px; }
+.sr-source-toggle label{ display: flex; align-items: center; gap: 6px; font-size: .88rem; cursor: pointer; text-transform: none; letter-spacing: 0; }
+.sr-yt-check{ display: flex; align-items: center; gap: 12px; margin-top: 10px; font-size: .82rem; }
+.sr-yt-check:empty{ display: none; }
+.sr-yt-check img{ width: 54px; height: 96px; object-fit: cover; background: #000; border: 1px solid var(--border); }
+.sr-yt-check .ok{ color: var(--gold); }
+.sr-yt-check .err{ color: #e07a6a; }
 
 /* ---------- Data table (portfolio list) ---------- */
 .admin-table-wrap{ overflow-x: auto; }

@@ -221,7 +221,8 @@
 
     <div class="admin-card">
       <h3>카테고리(메뉴) 관리</h3>
-      <p class="card-desc">홈페이지 포트폴리오 필터에 노출되는 메뉴 이름입니다. 숫자가 낮을수록 먼저 노출됩니다. 이름 변경 후 반드시 저장하세요.</p>
+      <p class="card-desc">홈페이지 포트폴리오 필터에 노출되는 메뉴 이름입니다. 숫자가 낮을수록 먼저 노출됩니다. 이름 변경 후 반드시 저장하세요.<br>
+        오른쪽 '주소'는 광고 등에 쓰는 바로가기 주소입니다 (영문 소문자·숫자·하이픈). 예: <code>bunyang</code> → raonmodel.co.kr/portfolio?category=bunyang. 광고에 이미 쓴 주소는 바꾸지 마세요.</p>
       <div class="repeat-list" id="categoryList"></div>
       <div style="display:flex; gap:10px; margin-top:14px;">
         <button type="button" class="btn-add" id="addCategory">+ 카테고리 추가</button>
@@ -553,17 +554,26 @@
         <p class="card-desc" style="margin-top:6px;" id="sr_type_hint"></p>
       </div>
 
-      <div class="field">
+      <div class="field" id="sr_source_field">
+        <label>영상 소스 *</label>
+        <div class="sr-source-toggle" role="radiogroup">
+          <label><input type="radio" name="sr_source" value="youtube" checked> 유튜브 링크</label>
+          <label><input type="radio" name="sr_source" value="file"> 파일 업로드</label>
+        </div>
+      </div>
+
+      <div class="field" id="sr_youtube_field">
+        <label>유튜브 링크 *</label>
+        <input type="text" id="sr_youtube" placeholder="https://youtube.com/shorts/... 또는 https://youtu.be/...">
+        <div class="sr-yt-check" id="sr_youtube_check"></div>
+        <p class="card-desc" style="margin-top:6px;">쇼츠·일반 영상 모두 RAONGRAM에서 <strong>세로 릴스 비율(9:16)</strong>로 보입니다. 가로 영상은 잘리지 않고 가운데에 놓이며, 위아래 빈 곳은 영상 썸네일을 흐리게 깔아 채웁니다. 용량 제한이 없습니다.</p>
+      </div>
+
+      <div class="field" id="sr_media_field">
         <label id="sr_media_label">사진 파일</label>
         <div class="image-uploader" id="sr_media_preview"></div>
         <label class="upload-dropzone" style="margin-top:10px; width:100%;" id="sr_media_drop">파일 업로드<input type="file" id="sr_media_file"></label>
         <p class="card-desc" style="margin-top:6px;">Supabase 저장소 기본 업로드 한도는 파일당 50MB입니다. 영상이 크면 압축하거나 유튜브 링크를 쓰세요.</p>
-      </div>
-
-      <div class="field" id="sr_youtube_field">
-        <label>또는 유튜브 링크 (릴스)</label>
-        <input type="text" id="sr_youtube" placeholder="https://www.youtube.com/shorts/... 또는 일반 영상 URL">
-        <p class="card-desc" style="margin-top:6px;">링크를 넣으면 <strong>업로드한 파일 대신 유튜브 영상이 사용됩니다.</strong> 쇼츠 링크는 세로 비율로 나옵니다.</p>
       </div>
 
       <div class="field" id="sr_poster_field">

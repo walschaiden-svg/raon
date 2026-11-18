@@ -5,7 +5,9 @@ import { getTemplate, MAX_DETAIL_IMAGES } from './detail-layouts.js';
 
 const state = { category: 'all', region: 'all', scale: 'all', page: 1 };
 const itemCache = new Map();
+let categories = [];
 let categoryLabelMap = {};
+const BASE_TITLE = document.title;
 let fieldLabels = getDefault('portfolio').field_labels;
 let navIds = []; // ids of every item matching the current filters, in display order (spans all pages)
 let currentDetailId = null;
@@ -82,6 +84,35 @@ async function load() {
   renderPagination(result);
 }
 
+/* ---------------------------------------------------------------------------
+   카테고리별 주소 (?category=<slug>)
+
+   네이버 광고 등에서 특정 카테고리로 바로 들어오게 하는 랜딩 주소입니다.
+   slug 는 어드민에서 지정하는 공개용 영문 주소이고, 비어 있으면 내부 key 로
+   대신합니다. 탭을 누르면 주소창도 같이 바뀌어 그대로 복사·공유할 수 있습니다.
+--------------------------------------------------------------------------- */
+function categorySlug(key) {
+  const c = categories.find(c => c.key === key);
+  return (c && c.slug) || key;
+}
+
+function categoryKeyFromParam(param) {
+  if (!param) return 'all';
+  const p = param.toLowerCase();
+  const c = categories.find(c => (c.slug && c.slug.toLowerCase() === p) || c.key.toLowerCase() === p);
+  return c ? c.key : 'all';
+}
+
+function syncCategoryUrl() {
+  const url = new URL(window.location);
+  if (state.category === 'all') url.searchParams.delete('category');
+  else url.searchParams.set('category', categorySlug(state.category));
+  window.history.replaceState({}, '', url);
+
+  const label = categoryLabelMap[state.category];
+  document.title = label ? `${label} | ${BASE_TITLE}` : BASE_TITLE;
+}
+
 function renderCategoryTabs(categories) {
   const bar = document.getElementById('filterBar');
   const buttons = [`<button class="filter-btn ${state.category === 'all' ? 'active' : ''}" data-filter="all">전체</button>`]
@@ -94,6 +125,7 @@ function renderCategoryTabs(categories) {
       btn.classList.add('active');
       state.category = btn.dataset.filter;
       state.page = 1;
+      syncCategoryUrl();
       load();
     });
   });
@@ -113,10 +145,15 @@ function populateSelect(id, values) {
 }
 
 async function initFilters() {
-  const [categories, filters, portfolioContent] = await Promise.all([
+  const [fetchedCategories, filters, portfolioContent] = await Promise.all([
     fetchCategories(), fetchPortfolioFilters(), fetchPageContent('portfolio'),
   ]);
+  categories = fetchedCategories;
   categoryLabelMap = Object.fromEntries(categories.map(c => [c.key, c.label]));
+
+  // 랜딩 주소로 들어온 경우 탭을 그리기 전에 선택 상태를 정해 둡니다.
+  state.category = categoryKeyFromParam(new URLSearchParams(window.location.search).get('category'));
+  syncCategoryUrl();
   fieldLabels = portfolioContent.field_labels || fieldLabels;
 
   document.getElementById('regionFilterLabel').textContent = fieldLabels.region;
@@ -141,6 +178,7 @@ async function initFilters() {
     document.querySelectorAll('.filter-btn').forEach(b => b.classList.toggle('active', b.dataset.filter === 'all'));
     document.getElementById('regionFilter').value = 'all';
     document.getElementById('scaleFilter').value = 'all';
+    syncCategoryUrl();
     load();
   });
 }
