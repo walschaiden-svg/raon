@@ -159,7 +159,14 @@ function postCardHtml(post, i) {
 
   let mediaHtml;
   if (media.kind === 'youtube') {
-    mediaHtml = `<iframe src="${escapeAttr(youtubeEmbedUrl(media.ytId, { autoplay: false }))}" title="raon design 릴스" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen style="width:100%; aspect-ratio:${media.short ? '9/16' : '16/9'}; border:0;"></iframe>`;
+    // 유튜브는 쇼츠든 가로 영상이든 업로드한 릴스와 같은 9:16 세로 프레임에 넣습니다.
+    // 가로 영상을 꽉 채우려고 자르면 화면 2/3가 사라지고 플레이어 컨트롤까지 잘리므로,
+    // 가운데에 원본 비율로 두고 남는 위아래는 같은 썸네일을 흐리게 깔아 메웁니다.
+    mediaHtml = `
+      <div class="sr-yt-frame${media.short ? ' is-short' : ''}">
+        ${media.short ? '' : `<img class="sr-yt-blur" data-yt-blur="${escapeAttr(media.ytId)}" ${media.poster ? `src="${escapeAttr(media.poster)}"` : ''} alt="" aria-hidden="true">`}
+        <iframe src="${escapeAttr(youtubeEmbedUrl(media.ytId, { autoplay: false }))}" title="raon design 릴스" frameborder="0" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>
+      </div>`;
   } else if (media.kind === 'video') {
     // 릴스는 소리를 켤 수 있게 컨트롤을 주고, 움짤은 무음 루프로 계속 돕니다.
     mediaHtml = kind === 'motion'
@@ -212,6 +219,11 @@ function renderViewer() {
   stage.innerHTML = postCardHtml(post, viewerIndex);
   stage.scrollTop = 0;
   bindPostCards(stage);
+
+  stage.querySelectorAll('img[data-yt-blur]').forEach(img => {
+    if (img.getAttribute('src')) return;
+    loadThumbnailInto(img, youtubeThumbnailCandidates(img.dataset.ytBlur));
+  });
 
   document.getElementById('srPrevBtn').disabled = viewerIndex <= 0;
   document.getElementById('srNextBtn').disabled = viewerIndex >= visible.length - 1;

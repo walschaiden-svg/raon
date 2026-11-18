@@ -158,6 +158,24 @@
 .sr-post.is-reel .sr-post-media img,
 .sr-post.is-reel .sr-post-media video{ width: auto; max-width: 100%; height: 64vh; }
 
+/* 유튜브 릴스 — 업로드 릴스와 같은 높이의 9:16 세로 프레임.
+   쇼츠는 꽉 채우고, 가로 영상은 가운데에 원본 비율로 두고 뒤에 블러 썸네일을 깝니다. */
+.sr-yt-frame{
+  position: relative; height: 64vh; aspect-ratio: 9 / 16; max-width: 100%;
+  background: #000; overflow: hidden;
+}
+.sr-yt-frame iframe{ position: absolute; border: 0; display: block; }
+.sr-yt-frame.is-short iframe{ inset: 0; width: 100%; height: 100%; }
+.sr-yt-frame:not(.is-short) iframe{
+  left: 0; top: 50%; transform: translateY(-50%);
+  width: 100%; height: auto; aspect-ratio: 16 / 9;
+}
+.sr-post .sr-post-media .sr-yt-frame img.sr-yt-blur{
+  position: absolute; inset: -24px; width: calc(100% + 48px); height: calc(100% + 48px);
+  max-width: none; max-height: none; object-fit: cover;
+  filter: blur(22px) brightness(.5); transform: scale(1.1);
+}
+
 /* 더블탭 하트 버스트 */
 .sr-burst{
   position: absolute; top: 50%; left: 50%; z-index: 3;
@@ -231,5 +249,7 @@
   .sr-post-media img, .sr-post-media video{ max-height: 74vh; }
   .sr-post.is-reel .sr-post-media img,
   .sr-post.is-reel .sr-post-media video{ height: auto; width: 100%; max-height: 74vh; }
+  /* 화면 너비를 넘지 않는 선에서 최대한 크게: 높이를 정하면 너비는 9:16 비율이 따라옵니다. */
+  .sr-yt-frame{ height: min(74vh, calc(100vw * 16 / 9)); }
   .sr-act{ font-size: 23px; padding: 8px 9px; }
 }

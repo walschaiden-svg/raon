@@ -2,9 +2,10 @@ export function parseYoutubeId(url) {
   if (!url) return null;
   const patterns = [
     /youtu\.be\/([A-Za-z0-9_-]{11})/,
-    /youtube\.com\/watch\?v=([A-Za-z0-9_-]{11})/,
+    /youtube\.com\/watch\?(?:.*&)?v=([A-Za-z0-9_-]{11})/,
     /youtube\.com\/embed\/([A-Za-z0-9_-]{11})/,
     /youtube\.com\/shorts\/([A-Za-z0-9_-]{11})/,
+    /youtube\.com\/live\/([A-Za-z0-9_-]{11})/,
   ];
   for (const re of patterns) {
     const m = String(url).match(re);
