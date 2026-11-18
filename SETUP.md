@@ -35,8 +35,9 @@
 
 ## 배포 시 참고사항
 
-- 이 사이트는 순수 정적 파일(HTML/CSS/JS)이므로 Cafe24, Netlify, Vercel, GitHub Pages 등
-  어떤 정적 호스팅에도 그대로 업로드하면 됩니다. 별도의 서버(Node 등)는 필요하지 않습니다.
+- 이 사이트는 Cloudflare Workers(`raon`)로 호스팅됩니다. GitHub `main` 브랜치에 push하면
+  Cloudflare Workers Builds가 자동으로 배포합니다. 설정은 `wrangler.toml`, 견적 문의 텔레그램 알림은
+  `worker/index.js`가 처리합니다(`TELEGRAM_BOT_TOKEN`, `TELEGRAM_CHAT_ID`는 Cloudflare 대시보드에서 설정).
 - `assets/js/supabase-config.js` 에 들어가는 anon key는 공개되는 파일이지만,
   `supabase/schema.sql`에 정의된 RLS 정책 덕분에 방문자는 공개(published)된 콘텐츠만 읽을 수 있고,
   로그인한 관리자만 쓰기/수정/삭제가 가능합니다.
