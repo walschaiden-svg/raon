@@ -1737,10 +1737,11 @@ async function persistShowroomOrder(tbody) {
   }
 }
 
-/* 릴스만 유튜브 링크/파일 중 하나를 고릅니다. 사진·움짤은 항상 파일입니다. */
+/* 업로드 방식은 폼 맨 위에 항상 보입니다. 유튜브 링크는 릴스로만 올라가므로
+   둘은 서로를 따라 바뀝니다 — 링크를 고르면 종류가 릴스로, 종류를 사진·움짤로
+   바꾸면 방식이 파일로 돌아갑니다. */
 function srSource() {
-  if (document.getElementById('sr_type').value !== 'reel') return 'file';
-  return document.querySelector('input[name="sr_source"]:checked')?.value || 'youtube';
+  return document.querySelector('input[name="sr_source"]:checked')?.value || 'file';
 }
 
 function setSrSource(value) {
@@ -1756,7 +1757,6 @@ function syncShowroomTypeUi() {
   document.getElementById('sr_media_label').textContent =
     type === 'photo' ? '사진 파일' : (type === 'motion' ? '움짤 파일 (GIF / 짧은 mp4)' : '영상 파일');
   document.getElementById('sr_media_file').setAttribute('accept', SR_ACCEPT[type] || '*/*');
-  document.getElementById('sr_source_field').style.display = type === 'reel' ? '' : 'none';
   document.getElementById('sr_youtube_field').style.display = useYoutube ? '' : 'none';
   document.getElementById('sr_media_field').style.display = useYoutube ? 'none' : '';
   document.getElementById('sr_poster_field').style.display = type === 'photo' || useYoutube ? 'none' : '';
@@ -1806,8 +1806,8 @@ function openShowroomModal(post) {
   document.getElementById('srModalTitle').textContent = post ? '게시물 수정' : '새 게시물';
   document.getElementById('sr_type').value = post?.media_type || 'photo';
   document.getElementById('sr_youtube').value = post?.youtube_url || '';
-  // 새 릴스는 용량 제한이 없는 유튜브 링크가 기본이고, 기존 게시물은 저장된 방식을 따릅니다.
-  setSrSource(post && !parseYoutubeId(post.youtube_url) && post.media_url ? 'file' : 'youtube');
+  // 기존 게시물은 저장된 방식을 따르고, 새 게시물은 파일 업로드로 시작합니다.
+  setSrSource(post && parseYoutubeId(post.youtube_url) ? 'youtube' : 'file');
   document.getElementById('sr_published').checked = post ? !!post.published : true;
   document.getElementById('srDeleteBtn').style.display = post ? 'inline-flex' : 'none';
 
@@ -1854,8 +1854,14 @@ function initShowroomPanel() {
   document.getElementById('srModal').addEventListener('click', (e) => {
     if (e.target.id === 'srModal') closeShowroomModal();
   });
-  document.getElementById('sr_type').addEventListener('change', syncShowroomTypeUi);
-  document.querySelectorAll('input[name="sr_source"]').forEach(r => r.addEventListener('change', syncShowroomTypeUi));
+  document.getElementById('sr_type').addEventListener('change', () => {
+    if (document.getElementById('sr_type').value !== 'reel') setSrSource('file');
+    syncShowroomTypeUi();
+  });
+  document.querySelectorAll('input[name="sr_source"]').forEach(r => r.addEventListener('change', () => {
+    if (srSource() === 'youtube') document.getElementById('sr_type').value = 'reel';
+    syncShowroomTypeUi();
+  }));
   document.getElementById('sr_youtube').addEventListener('input', renderSrYoutubeCheck);
 
   document.getElementById('sr_media_file').addEventListener('change', async (e) => {
